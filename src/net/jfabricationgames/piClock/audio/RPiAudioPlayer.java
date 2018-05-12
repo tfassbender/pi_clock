@@ -156,6 +156,7 @@ public class RPiAudioPlayer {
 			}
 			catch (InterruptedException ie) {
 				//ie.printStackTrace();
+				Thread.currentThread().interrupt();
 			}
 			finally {
 				if (player != null && player.isAlive()) {

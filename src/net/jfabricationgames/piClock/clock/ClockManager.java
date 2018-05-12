@@ -23,7 +23,7 @@ public class ClockManager implements Runnable {
 		lastTimeMinutes = -1;
 		piClockConnection = connection;
 		timeChangeListeners = new ArrayList<TimeChangeListener>();
-		clockManager = new Thread(this);
+		clockManager = new Thread(this, "ClockManagerThread");
 		clockManager.start();
 	}
 	
@@ -36,8 +36,21 @@ public class ClockManager implements Runnable {
 			if (timeMinutes != lastTimeMinutes) {
 				updateClock(now);
 				informListeners(now);
+				lastTimeMinutes = timeMinutes;
+			}
+			try {
+				//wait for 50 milliseconds till the next time check
+				Thread.sleep(50);
+			}
+			catch (InterruptedException ie) {
+				//ie.printStackTrace();
+				Thread.currentThread().interrupt();
 			}
 		}
+	}
+	
+	public void stop() {
+		clockManager.interrupt();
 	}
 	
 	private void updateClock(LocalDateTime time) {
@@ -47,5 +60,12 @@ public class ClockManager implements Runnable {
 		for (TimeChangeListener listener : timeChangeListeners) {
 			listener.timeChanged(time);
 		}
+	}
+	
+	public void addTimeChangeListener(TimeChangeListener listener) {
+		timeChangeListeners.add(listener);
+	}
+	public boolean removeTimeChangeListener(TimeChangeListener listener) {
+		return timeChangeListeners.remove(listener);
 	}
 }

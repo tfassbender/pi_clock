@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="PiClock" default="build_jars" basedir=".">
+
+	<property name="version.mayor">0</property>
+	<property name="version.minor">1</property>
+	<property name="version.patch">0</property>
+
+	<property name="version_number">${version.mayor}.${version.minor}.${version.patch}</property>
+	<property name="version">V${version_number}</property>
+
+	<property name="project_name_fx">PiClockFx</property>
+	<property name="project_name_swing">PiClock</property>
+
+	<property name="mainClassFx">net.jfabricationgames.piClock.frame.PiClockFrame</property>
+	<property name="mainClassSwing">net.jfabricationgames.piClock.frame.PiClockFrameSwing</property>
+
+	<property name="src">src/</property>
+	<property name="build_all">build</property>
+	<property name="build">build/main</property>
+	<property name="dist">dist/</property>
+	
+	<property name="src_test">test/</property>
+	<property name="build_test">build/test</property>
+
+	<property name="path_elem_rxtx">lib/rxtx-2.1.7.jar</property>
+	<property name="path_elem_miglayout">miglayout15-swing.jar</property>
+	
+	<path id="classpath">
+		<pathelement path="${path_elem_rxtx}"/>
+		<pathelement path="${path_elem_miglayout}"/>
+	</path>
+
+	<target name="init">
+		<tstamp />
+		<mkdir dir="${build}" />
+	</target>
+
+	<target name="generate_timestamp" depends="init">
+		<sequential>
+			<local name="timestamp" />
+			<tstamp>
+				<format property="timestamp" pattern="yyyy_MM_dd HH:mm:ss" />
+			</tstamp>
+			<echo file="${build}/build_info">PiClock: ${version_number}
+Build on: ${timestamp}</echo>
+		</sequential>
+	</target>
+	
+	<target name="generate_version_info" depends="init">
+		<sequential>
+			<local name="timestamp" />
+			<tstamp>
+				<format property="timestamp" pattern="yyyy_MM_dd HH:mm:ss" />
+			</tstamp>
+			<echo file="${build}/piClock_info.properties">version=${version_number}
+build_date=${timestamp}</echo>
+		</sequential>
+	</target>
+	
+	<target name="compile_src" depends="init">
+		<javac srcdir="${src}" destdir="${build}" encoding="UTF-8" includeantruntime="false">
+			<classpath refid="classpath" />
+		</javac>
+	</target>
+	
+	<target name="build_jars">
+		<antcall target="generate_timestamp" />
+		<antcall target="generate_version_info"/>
+		<antcall target="build_jar_fx" />
+		<antcall target="build_jar_swing" />
+	</target>
+	
+	<target name="build_jar_fx" depends="compile_src">
+		<mkdir dir="${dist}/lib" />
+		<jar jarfile="${dist}/lib/${project_name_fx}_${version}.jar" basedir="${build}">
+			<manifest>
+				<attribute name="Main-Class" value="${mainClassFx}" />
+			</manifest>
+			<fileset dir="." includes="${build}/build_timestamp" />
+			<zipgroupfileset dir="." includes="*.jar" />
+			<zipgroupfileset dir="." includes="lib/*.jar" />
+		</jar>
+	</target>
+
+	<target name="build_jar_swing" depends="compile_src">
+		<mkdir dir="${dist}/lib" />
+		<jar jarfile="${dist}/lib/${project_name_swing}_${version}.jar" basedir="${build}">
+			<manifest>
+				<attribute name="Main-Class" value="${mainClassSwing}" />
+			</manifest>
+			<fileset dir="." includes="${build}/build_timestamp" />
+			<zipgroupfileset dir="." includes="*.jar" />
+			<zipgroupfileset dir="." includes="lib/*.jar" />
+		</jar>
+	</target>
+
+	<target name="clean">
+		<delete dir="${build_all}" />
+		<delete dir="${dist}" />
+	</target>
+
+</project>

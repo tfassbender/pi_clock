@@ -1,0 +1,17 @@
+.label_small {
+	-fx-font-size: 18.0pt;
+	-fx-font-weight: bold;
+	-fx-text-fill: black;
+}
+
+.label_info {
+	-fx-font-size: 70.0pt;
+	-fx-font-weight: bold;
+	-fx-text-fill: red;
+}
+
+.tab_label {
+	-fx-font-size: 18.0;
+	-fx-font-weight: bold;
+	-fx-padding: 7.0pt;
+}
