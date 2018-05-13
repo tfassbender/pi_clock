@@ -1,22 +1,35 @@
 package net.jfabricationgames.piClock.frame;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.border.EmptyBorder;
 
-import net.jfabricationgames.piClock.clock.ClockManager;
-import net.jfabricationgames.piClock.serial.PiClockSerialConnection;
-import net.jfabricationgames.piClock.temperature.TemperatureManager;
+import net.jfabricationgames.piClock.clock.Alarm;
+import net.jfabricationgames.piClock.clock.AlarmRepetition;
 import net.miginfocom.swing.MigLayout;
-import javax.swing.JLabel;
-import java.awt.Font;
-import java.awt.BorderLayout;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import javax.swing.JScrollPane;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.JComboBox;
+import javax.swing.JCheckBox;
+import javax.swing.JList;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 
 public class PiClockFrameSwing extends JFrame {
 
@@ -26,6 +39,17 @@ public class PiClockFrameSwing extends JFrame {
 	private JLabel lblTime_1;
 	private JLabel lblTemperature_1;
 	private JLabel lblHumidity_1;
+	
+	private PiClockSwingController controller;
+	private JSpinner spinnerHour;
+	private JSpinner spinnerMinute;
+	private JComboBox<AlarmRepetition> comboBox;
+	
+	private Alarm selectedAlarm;
+	private JCheckBox chckbxAlarmActive;
+	private JList<Alarm> listAlarms;
+	
+	private DefaultListModel<Alarm> alarmListModel;
 	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -42,19 +66,12 @@ public class PiClockFrameSwing extends JFrame {
 	}
 
 	public PiClockFrameSwing() {
-		PiClockSerialConnection serialConnection = new PiClockSerialConnection();
-		ClockManager clockManager = new ClockManager(serialConnection);
-		TemperatureManager temperatureManager = new TemperatureManager(serialConnection);
-		PiClockSwingController controller = new PiClockSwingController(this);
-		clockManager.addTimeChangeListener(controller);
-		temperatureManager.addTimeChangeListener(controller);
+		controller = new PiClockSwingController(this);
 		
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent arg0) {
-				clockManager.stop();
-				temperatureManager.stop();
-				serialConnection.close();
+				controller.stopAll();
 			}
 		});
 		
@@ -103,7 +120,163 @@ public class PiClockFrameSwing extends JFrame {
 		
 		JPanel panelAlarm = new JPanel();
 		tabbedPane.addTab("Alarm", null, panelAlarm, null);
-		panelAlarm.setLayout(new MigLayout("", "[]", "[]"));
+		panelAlarm.setLayout(new MigLayout("", "[50px][50px][30px][30px][100px,grow][100px]", "[][grow][][][][][10px][]"));
+		
+		JLabel lblAlarms = new JLabel("Alarms:");
+		lblAlarms.setFont(new Font("Tahoma", Font.BOLD, 18));
+		panelAlarm.add(lblAlarms, "cell 4 0 2 1");
+		
+		JButton btnPauseAlarm = new JButton("Pause Alarm");
+		btnPauseAlarm.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				controller.pauseAlarm();
+			}
+		});
+		btnPauseAlarm.setFont(new Font("Tahoma", Font.BOLD, 18));
+		panelAlarm.add(btnPauseAlarm, "cell 0 1 4 1,alignx center");
+		
+		JScrollPane scrollPane = new JScrollPane();
+		panelAlarm.add(scrollPane, "cell 4 1 2 4,grow");
+		
+		alarmListModel = new DefaultListModel<Alarm>();
+		listAlarms = new JList<Alarm>(alarmListModel);
+		listAlarms.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent arg0) {
+				selectedAlarm = listAlarms.getSelectedValue();
+				chckbxAlarmActive.setSelected(selectedAlarm != null && selectedAlarm.isActive());
+			}
+		});
+		listAlarms.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		listAlarms.setBackground(Color.LIGHT_GRAY);
+		listAlarms.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		scrollPane.setViewportView(listAlarms);
+		
+		JLabel lblNewAlarm = new JLabel("New Alarm:");
+		lblNewAlarm.setFont(new Font("Tahoma", Font.BOLD, 18));
+		panelAlarm.add(lblNewAlarm, "cell 0 2 4 1");
+		
+		JLabel lblHour = new JLabel("Hour:");
+		lblHour.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(lblHour, "cell 0 3");
+		
+		spinnerHour = new JSpinner();
+		spinnerHour.setModel(new SpinnerNumberModel(7, 0, 23, 1));
+		panelAlarm.add(spinnerHour, "cell 1 3,growx");
+		
+		chckbxAlarmActive = new JCheckBox("Alarm active");
+		chckbxAlarmActive.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (selectedAlarm != null) {
+					selectedAlarm.setActive(chckbxAlarmActive.isSelected());
+					repaint();
+				}
+			}
+		});
+		
+		JButton btnRemoveAlarm = new JButton("Remove Alarm");
+		btnRemoveAlarm.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (selectedAlarm != null) {
+					controller.removeAlarm(selectedAlarm);
+				}
+				updateAlarmList();
+			}
+		});
+		
+		JButton btn_increase_hour = new JButton("+");
+		btn_increase_hour.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int hour = (Integer) spinnerHour.getValue();
+				hour++;
+				spinnerHour.setValue(hour);
+			}
+		});
+		btn_increase_hour.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(btn_increase_hour, "cell 2 3");
+		
+		JButton btn_decrease_hour = new JButton("-");
+		btn_decrease_hour.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int hour = (Integer) spinnerHour.getValue();
+				hour--;
+				spinnerHour.setValue(hour);
+			}
+		});
+		btn_decrease_hour.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(btn_decrease_hour, "cell 3 3");
+		
+		JButton btn_increase_minute = new JButton("+");
+		btn_increase_minute.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int minute = (Integer) spinnerMinute.getValue();
+				minute++;
+				spinnerMinute.setValue(minute);
+			}
+		});
+		btn_increase_minute.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(btn_increase_minute, "cell 2 4");
+		
+		JButton btn_decrease_minute = new JButton("-");
+		btn_decrease_minute.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int minute = (Integer) spinnerMinute.getValue();
+				minute--;
+				spinnerMinute.setValue(minute);
+			}
+		});
+		btn_decrease_minute.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(btn_decrease_minute, "cell 3 4");
+		btnRemoveAlarm.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(btnRemoveAlarm, "cell 4 5,alignx center");
+		chckbxAlarmActive.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(chckbxAlarmActive, "cell 5 5,alignx right");
+		
+		JButton btnAlarmOff = new JButton("Alarm Off");
+		btnAlarmOff.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				controller.stopAlarm();
+			}
+		});
+		btnAlarmOff.setFont(new Font("Tahoma", Font.BOLD, 18));
+		panelAlarm.add(btnAlarmOff, "cell 4 7 2 1,alignx center");
+		
+		JLabel lblMinute = new JLabel("Minute:");
+		lblMinute.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(lblMinute, "cell 0 4");
+		
+		spinnerMinute = new JSpinner();
+		spinnerMinute.setModel(new SpinnerNumberModel(0, 0, 59, 1));
+		panelAlarm.add(spinnerMinute, "cell 1 4,growx");
+		
+		JLabel lblRepeat = new JLabel("Repeat:");
+		lblRepeat.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(lblRepeat, "cell 0 5,alignx trailing");
+		
+		DefaultComboBoxModel<AlarmRepetition> comboBoxModel = new DefaultComboBoxModel<AlarmRepetition>();
+		for (AlarmRepetition repetition : AlarmRepetition.values()) {
+			comboBoxModel.addElement(repetition);
+		}
+		comboBox = new JComboBox<AlarmRepetition>(comboBoxModel);
+		panelAlarm.add(comboBox, "cell 1 5 3 1,growx");
+		
+		JButton btnAddAlarm = new JButton("Add Alarm");
+		btnAddAlarm.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				controller.addAlarm((Integer) spinnerHour.getValue(), (Integer) spinnerMinute.getValue(), 
+						(AlarmRepetition) comboBox.getSelectedItem());
+				updateAlarmList();
+			}
+		});
+		btnAddAlarm.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(btnAddAlarm, "cell 0 7 4 1,alignx center");
+	}
+	
+	private void updateAlarmList() {
+		alarmListModel.removeAllElements();
+		for (Alarm alarm : controller.getAlarms()) {
+			alarmListModel.addElement(alarm);
+		}
+		repaint();
 	}
 	
 	public void setTime(String time) {

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="PiClock" default="build_jars" basedir=".">
 
-	<property name="version.mayor">0</property>
-	<property name="version.minor">1</property>
+	<property name="version.mayor">1</property>
+	<property name="version.minor">0</property>
 	<property name="version.patch">0</property>
 
 	<property name="version_number">${version.mayor}.${version.minor}.${version.patch}</property>

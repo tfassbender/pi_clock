@@ -29,9 +29,10 @@ public class RPiAudioPlayer {
 	private BufferedReader playerErr = null;
 	private BufferedWriter playerIn = null;
 	
-	private static final String TRACK_PROPERTIES_PATH = "./properties/tracks.properties";
+	private static final String TRACK_PROPERTIES_DIR = ".pi_clock_properties";
+	private static final String TRACK_PROPERTIES_PATH = TRACK_PROPERTIES_DIR + "/tracks.properties";
 	private static final String TRACK_DIR_PROPERTY = "track_dir";
-	private static final String DEFAULT_TRACK_DIR = "./tracks";
+	private static final String DEFAULT_TRACK_DIR = "tracks";
 	private static final String PLAYER_COMMAND = "omxplayer -o local ";
 	
 	public RPiAudioPlayer() throws IOException {
@@ -55,14 +56,20 @@ public class RPiAudioPlayer {
 			}
 		}
 		catch (IOException ioe) {
+			System.err.println("Couldn't open properties file. Creating default file.");
 			//try to create the properties file if there is none
 			trackProperties.setProperty(TRACK_DIR_PROPERTY, DEFAULT_TRACK_DIR);
+			File dir = new File(TRACK_PROPERTIES_DIR);
+			if (!dir.exists()) {
+				dir.mkdirs();
+			}
 			try (OutputStream outStream = new FileOutputStream(new File(TRACK_PROPERTIES_PATH))) {
 				trackProperties.store(outStream, "set the path to the tracks, that are to be played as alarm, here");
 			}
 			catch (IOException ioe2) {
 				throw new IOException("Couldn't create a properties file.", ioe2); 
 			}
+			loadTracks(DEFAULT_TRACK_DIR);
 		}
 	}
 	
@@ -91,7 +98,7 @@ public class RPiAudioPlayer {
 				//ioe.printStackTrace();
 			}
 		}
-		int randomTrackNumber = (int) (Math.random() * tracks.size() + 1);
+		int randomTrackNumber = (int) (Math.random() * tracks.size());
 		File playedTrack = tracks.get(randomTrackNumber);
 		player = Runtime.getRuntime().exec(PLAYER_COMMAND + playedTrack.getAbsolutePath());
 		playerOut = new BufferedReader(new InputStreamReader(player.getInputStream()));
