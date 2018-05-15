@@ -6,3 +6,4 @@ build/
 dist/
 
 .pi_clock_properties
+tracks/

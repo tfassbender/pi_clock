@@ -35,7 +35,9 @@ public class RPiAudioPlayer {
 	private static final String DEFAULT_TRACK_DIR = "tracks";
 	private static final String PLAYER_COMMAND = "omxplayer -o local ";
 	
-	public RPiAudioPlayer() throws IOException {
+	private Thread nextTrackThread;//wait for the track to end and start the next one
+	
+	public RPiAudioPlayer() throws IOException, IllegalStateException {
 		trackProperties = new Properties();
 		try (InputStream inStream = new FileInputStream(new File(TRACK_PROPERTIES_PATH))) {
 			//load the properties from the file
@@ -73,16 +75,16 @@ public class RPiAudioPlayer {
 		}
 	}
 	
-	private void loadTracks(String trackDir) throws IOException {
+	private void loadTracks(String trackDir) throws IllegalStateException {
 		File dir = new File(trackDir);
 		if (dir.exists() && dir.isDirectory()) {
 			tracks = Arrays.stream(dir.listFiles()).filter(file -> file.getName().endsWith(".mp3")).collect(Collectors.toList());
 			if (tracks.isEmpty()) {
-				throw new IOException("The track directory doesn't contain any '.mp3' files");
+				throw new IllegalStateException("The track directory doesn't contain any '.mp3' files");
 			}
 		}
 		else {
-			throw new IOException("The chosen track directory doesn't exist or is no directory (chosen dir: " + trackDir + "");
+			throw new IllegalStateException("The chosen track directory doesn't exist or is no directory (chosen dir: " + trackDir + "");
 		}
 	}
 	
@@ -105,6 +107,40 @@ public class RPiAudioPlayer {
 		playerErr = new BufferedReader(new InputStreamReader(player.getErrorStream()));
 		playerIn = new BufferedWriter(new OutputStreamWriter(player.getOutputStream()));
 		trackPaused = false;
+		//start a watcher thread that starts the next track when this one ends
+		//the old thread (if one) doesn't need to be interrupted because it has no loop
+		nextTrackThread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					player.waitFor();
+				}
+				catch (InterruptedException ie) {
+					Thread.currentThread().interrupt();
+				}
+				//close the streams to the old process
+				try {
+					playerIn.close();
+					playerOut.close();
+					playerErr.close();					
+				}
+				catch (IOException ioe) {
+					ioe.printStackTrace();
+				}
+				//start the new track
+				if (!Thread.currentThread().isInterrupted()) {
+					try {
+						play();
+					}
+					catch (IOException ioe) {
+						ioe.printStackTrace();
+					}					
+				}
+			}
+		});
+		nextTrackThread.setPriority(Thread.MIN_PRIORITY);
+		nextTrackThread.setDaemon(true);
+		nextTrackThread.start();
 	}
 	
 	public void play() throws IOException {
@@ -145,6 +181,9 @@ public class RPiAudioPlayer {
 	public void stop() throws IllegalStateException {
 		if (player != null) {
 			try {
+				//interrupt the thread first to prevent it from restarting
+				nextTrackThread.interrupt();
+				//close the process
 				playerIn.write("q");
 				playerIn.flush();
 				trackPaused = false;

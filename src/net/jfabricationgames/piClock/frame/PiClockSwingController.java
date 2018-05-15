@@ -32,13 +32,14 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	
 	public PiClockSwingController(PiClockFrameSwing frame) {
 		this.frame = frame;
-
+		
 		serialConnection = new PiClockSerialConnection();
 		clockManager = new ClockManager(serialConnection);
 		temperatureManager = new TemperatureManager(serialConnection);
 		try {
 			audioPlayer = new RPiAudioPlayer();
-			alarmManager = new AlarmClockManager(clockManager, audioPlayer);
+			alarmManager = new AlarmClockManager(clockManager, audioPlayer, this);
+			clockManager.addTimeChangeListener(alarmManager);
 		}
 		catch (IOException ioe) {
 			ioe.printStackTrace();
@@ -99,9 +100,29 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 		return alarmManager.getAlarms();
 	}
 	
+	public void setTimeTillNextAlarm(int hours, int minutes) {
+		frame.setTimeTillNextAlarm(hours, minutes);
+		updateAlarmList();
+	}
+	public void updateNextAlarmTime() {
+		alarmManager.updateNextAlarm();
+	}
+	
 	public void stopAll() {
 		clockManager.stop();
 		temperatureManager.stop();
 		serialConnection.close();
+	}
+	
+	public void storeAlarms() {
+		alarmManager.storeAlarms();
+	}
+	
+	public void updateAlarmList() {
+		frame.updateAlarmList();
+	}
+	
+	public AlarmClockManager getAlarmManager() {
+		return alarmManager;
 	}
 }

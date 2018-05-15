@@ -4,32 +4,34 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
+import javax.swing.ListSelectionModel;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import net.jfabricationgames.piClock.clock.Alarm;
 import net.jfabricationgames.piClock.clock.AlarmRepetition;
 import net.miginfocom.swing.MigLayout;
-import javax.swing.JScrollPane;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.JComboBox;
-import javax.swing.JCheckBox;
-import javax.swing.JList;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
 
 public class PiClockFrameSwing extends JFrame {
 
@@ -50,6 +52,9 @@ public class PiClockFrameSwing extends JFrame {
 	private JList<Alarm> listAlarms;
 	
 	private DefaultListModel<Alarm> alarmListModel;
+	
+	private Thread spinnerButtonThread;
+	private JLabel lblNextAlarmTime;
 	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -72,12 +77,13 @@ public class PiClockFrameSwing extends JFrame {
 			@Override
 			public void windowClosing(WindowEvent arg0) {
 				controller.stopAll();
+				controller.storeAlarms();
 			}
 		});
 		
 		setTitle("PiClock");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 500, 350);
+		setBounds(100, 100, 600, 400);
 		contentPane = new JPanel();
 		contentPane.setBackground(Color.GRAY);
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -120,11 +126,11 @@ public class PiClockFrameSwing extends JFrame {
 		
 		JPanel panelAlarm = new JPanel();
 		tabbedPane.addTab("Alarm", null, panelAlarm, null);
-		panelAlarm.setLayout(new MigLayout("", "[50px][50px][30px][30px][100px,grow][100px]", "[][grow][][][][][10px][]"));
+		panelAlarm.setLayout(new MigLayout("", "[50px][50px][30px][30px][10px][][100px,grow][100px]", "[][grow][][][][][10px][][10px][]"));
 		
 		JLabel lblAlarms = new JLabel("Alarms:");
 		lblAlarms.setFont(new Font("Tahoma", Font.BOLD, 18));
-		panelAlarm.add(lblAlarms, "cell 4 0 2 1");
+		panelAlarm.add(lblAlarms, "cell 5 0 3 1");
 		
 		JButton btnPauseAlarm = new JButton("Pause Alarm");
 		btnPauseAlarm.addActionListener(new ActionListener() {
@@ -132,11 +138,11 @@ public class PiClockFrameSwing extends JFrame {
 				controller.pauseAlarm();
 			}
 		});
-		btnPauseAlarm.setFont(new Font("Tahoma", Font.BOLD, 18));
+		btnPauseAlarm.setFont(new Font("Tahoma", Font.BOLD, 30));
 		panelAlarm.add(btnPauseAlarm, "cell 0 1 4 1,alignx center");
 		
 		JScrollPane scrollPane = new JScrollPane();
-		panelAlarm.add(scrollPane, "cell 4 1 2 4,grow");
+		panelAlarm.add(scrollPane, "cell 5 1 3 4,grow");
 		
 		alarmListModel = new DefaultListModel<Alarm>();
 		listAlarms = new JList<Alarm>(alarmListModel);
@@ -148,7 +154,7 @@ public class PiClockFrameSwing extends JFrame {
 		});
 		listAlarms.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		listAlarms.setBackground(Color.LIGHT_GRAY);
-		listAlarms.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		listAlarms.setFont(new Font("Tahoma", Font.BOLD, 16));
 		scrollPane.setViewportView(listAlarms);
 		
 		JLabel lblNewAlarm = new JLabel("New Alarm:");
@@ -173,72 +179,90 @@ public class PiClockFrameSwing extends JFrame {
 			}
 		});
 		
-		JButton btnRemoveAlarm = new JButton("Remove Alarm");
-		btnRemoveAlarm.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (selectedAlarm != null) {
-					controller.removeAlarm(selectedAlarm);
-				}
-				updateAlarmList();
+		JButton btn_increase_hour = new JButton("+");
+		btn_increase_hour.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				startSpinnerButtonThread(() -> increaseHour());
 			}
 		});
-		
-		JButton btn_increase_hour = new JButton("+");
 		btn_increase_hour.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
-				int hour = (Integer) spinnerHour.getValue();
-				hour++;
-				spinnerHour.setValue(hour);
+				spinnerButtonThread.interrupt();
 			}
 		});
 		btn_increase_hour.setFont(new Font("Tahoma", Font.BOLD, 14));
 		panelAlarm.add(btn_increase_hour, "cell 2 3");
 		
 		JButton btn_decrease_hour = new JButton("-");
+		btn_decrease_hour.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				startSpinnerButtonThread(() -> decreaseHour());
+			}
+		});
 		btn_decrease_hour.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
-				int hour = (Integer) spinnerHour.getValue();
-				hour--;
-				spinnerHour.setValue(hour);
+				spinnerButtonThread.interrupt();
 			}
 		});
 		btn_decrease_hour.setFont(new Font("Tahoma", Font.BOLD, 14));
 		panelAlarm.add(btn_decrease_hour, "cell 3 3");
 		
 		JButton btn_increase_minute = new JButton("+");
+		btn_increase_minute.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				startSpinnerButtonThread(() -> increaseMinute());
+			}
+		});
 		btn_increase_minute.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
-				int minute = (Integer) spinnerMinute.getValue();
-				minute++;
-				spinnerMinute.setValue(minute);
+				spinnerButtonThread.interrupt();
 			}
 		});
 		btn_increase_minute.setFont(new Font("Tahoma", Font.BOLD, 14));
 		panelAlarm.add(btn_increase_minute, "cell 2 4");
 		
 		JButton btn_decrease_minute = new JButton("-");
+		btn_decrease_minute.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				startSpinnerButtonThread(() -> decreaseMinute());
+			}
+		});
 		btn_decrease_minute.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
-				int minute = (Integer) spinnerMinute.getValue();
-				minute--;
-				spinnerMinute.setValue(minute);
+				spinnerButtonThread.interrupt();
 			}
 		});
 		btn_decrease_minute.setFont(new Font("Tahoma", Font.BOLD, 14));
 		panelAlarm.add(btn_decrease_minute, "cell 3 4");
-		btnRemoveAlarm.setFont(new Font("Tahoma", Font.BOLD, 14));
-		panelAlarm.add(btnRemoveAlarm, "cell 4 5,alignx center");
+		
+		JLabel lblNextAlarmIn = new JLabel("Next Alarm in:");
+		lblNextAlarmIn.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(lblNextAlarmIn, "cell 5 5");
+		
+		lblNextAlarmTime = new JLabel("");
+		lblNextAlarmTime.setForeground(Color.RED);
+		lblNextAlarmTime.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(lblNextAlarmTime, "cell 6 5,alignx center");
 		chckbxAlarmActive.setFont(new Font("Tahoma", Font.BOLD, 14));
-		panelAlarm.add(chckbxAlarmActive, "cell 5 5,alignx right");
+		panelAlarm.add(chckbxAlarmActive, "cell 7 5,alignx right");
 		
 		JButton btnAlarmOff = new JButton("Alarm Off");
+		btnAlarmOff.setForeground(Color.RED);
 		btnAlarmOff.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				controller.stopAlarm();
 			}
 		});
-		btnAlarmOff.setFont(new Font("Tahoma", Font.BOLD, 18));
-		panelAlarm.add(btnAlarmOff, "cell 4 7 2 1,alignx center");
+		btnAlarmOff.setFont(new Font("Tahoma", Font.BOLD, 30));
+		panelAlarm.add(btnAlarmOff, "cell 5 7 3 3,alignx center");
 		
 		JLabel lblMinute = new JLabel("Minute:");
 		lblMinute.setFont(new Font("Tahoma", Font.BOLD, 14));
@@ -265,18 +289,99 @@ public class PiClockFrameSwing extends JFrame {
 				controller.addAlarm((Integer) spinnerHour.getValue(), (Integer) spinnerMinute.getValue(), 
 						(AlarmRepetition) comboBox.getSelectedItem());
 				updateAlarmList();
+				updateNextAlarmTime();
 			}
 		});
 		btnAddAlarm.setFont(new Font("Tahoma", Font.BOLD, 14));
-		panelAlarm.add(btnAddAlarm, "cell 0 7 4 1,alignx center");
+		panelAlarm.add(btnAddAlarm, "cell 0 7 4 1,alignx center,aligny top");
+		
+		JButton btnRemoveAlarm = new JButton("Remove Alarm");
+		btnRemoveAlarm.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (selectedAlarm != null) {
+					controller.removeAlarm(selectedAlarm);
+				}
+				updateAlarmList();
+				updateNextAlarmTime();
+			}
+		});
+		btnRemoveAlarm.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelAlarm.add(btnRemoveAlarm, "cell 0 9 4 1,alignx center");
 	}
 	
-	private void updateAlarmList() {
-		alarmListModel.removeAllElements();
-		for (Alarm alarm : controller.getAlarms()) {
-			alarmListModel.addElement(alarm);
+	private void increaseHour() {
+		int hour = (Integer) spinnerHour.getValue();
+		hour++;
+		hour = Math.max(hour, 0);
+		hour = Math.min(hour, 23);
+		spinnerHour.setValue(hour);
+	}
+	private void decreaseHour() {
+		int hour = (Integer) spinnerHour.getValue();
+		hour--;
+		hour = Math.max(hour, 0);
+		hour = Math.min(hour, 23);
+		spinnerHour.setValue(hour);
+	}
+	private void increaseMinute() {
+		int minute = (Integer) spinnerMinute.getValue();
+		minute++;
+		minute = Math.max(minute, 0);
+		minute = Math.min(minute, 59);
+		spinnerMinute.setValue(minute);
+	}
+	private void decreaseMinute() {
+		int minute = (Integer) spinnerMinute.getValue();
+		minute--;
+		minute = Math.max(minute, 0);
+		minute = Math.min(minute, 59);
+		spinnerMinute.setValue(minute);
+	}
+	
+	private void startSpinnerButtonThread(Runnable spinnerChange) {
+		Runnable runnable = new Runnable() {
+			@Override
+			public void run() {
+				//run the spinner change and wait 500ms the first time
+				try {
+					spinnerChange.run();
+					Thread.sleep(500);
+				}
+				catch (InterruptedException ie) {
+					Thread.currentThread().interrupt();
+				}
+				while (!Thread.currentThread().isInterrupted()) {
+					//after the first wait only wait for 100ms per increase
+					try {
+						spinnerChange.run();
+						Thread.sleep(100);
+					}
+					catch (InterruptedException ie) {
+						Thread.currentThread().interrupt();
+					}
+				}
+			}
+		};
+		if (spinnerButtonThread != null) {
+			spinnerButtonThread.interrupt();
 		}
-		repaint();
+		spinnerButtonThread = new Thread(runnable, "SpinnerButtonThread");
+		spinnerButtonThread.setPriority(Thread.MIN_PRIORITY);
+		spinnerButtonThread.setDaemon(true);
+		spinnerButtonThread.start();
+	}
+	
+	public void updateAlarmList() {
+		if (alarmListModel != null) {
+			alarmListModel.removeAllElements();
+			for (Alarm alarm : controller.getAlarms()) {
+				alarmListModel.addElement(alarm);
+			}
+			repaint();			
+		}
+	}
+	private void updateNextAlarmTime() {
+		controller.updateNextAlarmTime();
 	}
 	
 	public void setTime(String time) {
@@ -289,5 +394,30 @@ public class PiClockFrameSwing extends JFrame {
 	}
 	public void setHumidity(String humidity) {
 		lblHumidity_1.setText(humidity);
+	}
+	
+	public void setTimeTillNextAlarm(int hours, int minutes) {
+		if (lblNextAlarmTime != null) {
+			if (hours == -1 || minutes == -1) {
+				lblNextAlarmTime.setText("--:--");
+			}
+			else {
+				StringBuilder sb = new StringBuilder();
+				if (hours < 10) {
+					sb.append('0');
+				}
+				sb.append(Integer.toString(hours));
+				sb.append(':');
+				if (minutes < 10) {
+					sb.append('0');
+				}
+				sb.append(minutes);
+				lblNextAlarmTime.setText(sb.toString());
+			}			
+		}
+	}
+	
+	public PiClockSwingController getController() {
+		return controller;
 	}
 }

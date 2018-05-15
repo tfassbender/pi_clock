@@ -12,9 +12,9 @@ public class PiClockAlarm implements Alarm {
 	private LocalDateTime alarmDateTime;
 	private boolean active;
 	private transient boolean paused;
-	private AlarmClockManager manager;
+	private transient AlarmClockManager manager;
 	
-	private DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm (EEE)");
+	private transient DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm (EEE)");
 	
 	public PiClockAlarm(LocalDateTime alarmDateTime, AlarmClockManager manager, boolean active, AlarmRepetition repetition) {
 		Objects.requireNonNull(alarmDateTime, "You can't create an alarm without a date and time.");
@@ -65,6 +65,10 @@ public class PiClockAlarm implements Alarm {
 	@Override
 	public LocalDateTime getDateTime() {
 		return alarmDateTime;
+	}
+	@Override
+	public AlarmRepetition getRepetition() {
+		return repetition;
 	}
 	@Override
 	public void stop() {
@@ -128,6 +132,29 @@ public class PiClockAlarm implements Alarm {
 						alarmDateTime = alarmDateTime.plusDays(7);
 						break;
 				}
+			}
+		}
+	}
+
+	@Override
+	public int compareTo(Alarm alarm) {
+		if (active == alarm.isActive()) {
+			if (alarmDateTime.isEqual(alarm.getDateTime())) {
+				return 0;
+			}
+			else if (alarmDateTime.isBefore(alarm.getDateTime())) {
+				return -1;
+			}
+			else {
+				return 1;
+			}
+		}
+		else {
+			if (active) {
+				return -1;
+			}
+			else {
+				return 1;
 			}
 		}
 	}
