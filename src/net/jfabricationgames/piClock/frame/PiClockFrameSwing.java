@@ -21,11 +21,14 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -55,6 +58,8 @@ public class PiClockFrameSwing extends JFrame {
 	
 	private Thread spinnerButtonThread;
 	private JLabel lblNextAlarmTime;
+	private JSlider slider;
+	private JSpinner spinner;
 	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -174,7 +179,8 @@ public class PiClockFrameSwing extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (selectedAlarm != null) {
 					selectedAlarm.setActive(chckbxAlarmActive.isSelected());
-					repaint();
+					updateAlarmList();
+					updateNextAlarmTime();
 				}
 			}
 		});
@@ -307,11 +313,124 @@ public class PiClockFrameSwing extends JFrame {
 		});
 		btnRemoveAlarm.setFont(new Font("Tahoma", Font.BOLD, 14));
 		panelAlarm.add(btnRemoveAlarm, "cell 0 9 4 1,alignx center");
+		
+		JPanel panelPlayer = new JPanel();
+		tabbedPane.addTab("Player", null, panelPlayer, null);
+		panelPlayer.setLayout(new MigLayout("", "[10px][20px][10px][30px][50px][][][30px][][grow]", "[][][][][][20px][][][][grow]"));
+		
+		JLabel lblVolume = new JLabel("Volume:");
+		lblVolume.setFont(new Font("Tahoma", Font.BOLD, 24));
+		panelPlayer.add(lblVolume, "cell 0 0 8 1");
+		
+		JLabel lblScilence = new JLabel("I want to sleep...");
+		lblScilence.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelPlayer.add(lblScilence, "cell 0 1 3 1");
+		
+		slider = new JSlider();
+		slider.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent arg0) {
+				updateVolume(true, false);
+			}
+		});
+		slider.setMaximum(10);
+		slider.setValue(5);
+		panelPlayer.add(slider, "cell 3 1 5 1");
+		
+		JLabel lblLounderThanHell = new JLabel("Wake up already!!!");
+		lblLounderThanHell.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelPlayer.add(lblLounderThanHell, "cell 8 1");
+		
+		spinner = new JSpinner();
+		spinner.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				updateVolume(false, true);
+			}
+		});
+		spinner.setModel(new SpinnerNumberModel(5, 0, 10, 1));
+		panelPlayer.add(spinner, "cell 4 2,growx");
+		
+		JButton button = new JButton("+");
+		button.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				increaseVolume();
+			}
+		});
+		button.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelPlayer.add(button, "cell 5 2");
+		
+		JButton button_1 = new JButton("-");
+		button_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				decreaseVolume();
+			}
+		});
+		button_1.setFont(new Font("Tahoma", Font.BOLD, 14));
+		panelPlayer.add(button_1, "cell 6 2");
+		
+		JLabel lblTracklist = new JLabel("Tracklist:");
+		lblTracklist.setFont(new Font("Tahoma", Font.BOLD, 24));
+		panelPlayer.add(lblTracklist, "cell 0 4 3 1");
+		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		panelPlayer.add(scrollPane_1, "cell 3 4 7 6,grow");
+		
+		JList<String> list = new JList<String>();
+		list.setBackground(Color.LIGHT_GRAY);
+		list.setFont(new Font("Tahoma", Font.BOLD, 14));
+		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		scrollPane_1.setViewportView(list);
+		
+		JButton btnPlay = new JButton("Play");
+		btnPlay.setFont(new Font("Tahoma", Font.BOLD, 16));
+		panelPlayer.add(btnPlay, "cell 1 6,growx");
+		
+		JButton btnPause = new JButton("Pause");
+		btnPause.setFont(new Font("Tahoma", Font.BOLD, 16));
+		panelPlayer.add(btnPause, "cell 1 7,growx");
+		
+		JButton btnStop = new JButton("Stop");
+		btnStop.setFont(new Font("Tahoma", Font.BOLD, 16));
+		panelPlayer.add(btnStop, "cell 1 8,growx");
+	}
+	
+	private void updateVolume(boolean sliderCalling, boolean spinnerCalling) {
+		int volume;
+		if (sliderCalling) {
+			volume = slider.getValue();
+			spinner.setValue(volume);
+		}
+		else {
+			//spinner (or indirect buttons) calling
+			volume = (Integer) spinner.getValue();
+			slider.setValue(volume);
+		}
+		//TODO send the new volume to the player
+	}
+	
+	private void increaseVolume() {
+		int volume = slider.getValue();
+		volume++;
+		volume = Math.max(volume, 0);
+		volume = Math.min(volume, 10);
+		slider.setValue(volume);
+	}
+	private void decreaseVolume() {
+		int volume = slider.getValue();
+		volume--;
+		volume = Math.max(volume, 0);
+		volume = Math.min(volume, 10);
+		slider.setValue(volume);
 	}
 	
 	private void increaseHour() {
 		int hour = (Integer) spinnerHour.getValue();
 		hour++;
+		if (hour > 23) {
+			hour = 0;
+		}
+		if (hour < 0) {
+			hour = 23;
+		}
 		hour = Math.max(hour, 0);
 		hour = Math.min(hour, 23);
 		spinnerHour.setValue(hour);
@@ -319,6 +438,12 @@ public class PiClockFrameSwing extends JFrame {
 	private void decreaseHour() {
 		int hour = (Integer) spinnerHour.getValue();
 		hour--;
+		if (hour > 23) {
+			hour = 0;
+		}
+		if (hour < 0) {
+			hour = 23;
+		}
 		hour = Math.max(hour, 0);
 		hour = Math.min(hour, 23);
 		spinnerHour.setValue(hour);
@@ -326,6 +451,12 @@ public class PiClockFrameSwing extends JFrame {
 	private void increaseMinute() {
 		int minute = (Integer) spinnerMinute.getValue();
 		minute++;
+		if (minute > 59) {
+			minute = 0;
+		}
+		if (minute < 0) {
+			minute = 59;
+		}
 		minute = Math.max(minute, 0);
 		minute = Math.min(minute, 59);
 		spinnerMinute.setValue(minute);
@@ -333,6 +464,12 @@ public class PiClockFrameSwing extends JFrame {
 	private void decreaseMinute() {
 		int minute = (Integer) spinnerMinute.getValue();
 		minute--;
+		if (minute > 59) {
+			minute = 0;
+		}
+		if (minute < 0) {
+			minute = 59;
+		}
 		minute = Math.max(minute, 0);
 		minute = Math.min(minute, 59);
 		spinnerMinute.setValue(minute);

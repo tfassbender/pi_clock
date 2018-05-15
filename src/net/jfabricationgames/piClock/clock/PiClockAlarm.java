@@ -2,6 +2,7 @@ package net.jfabricationgames.piClock.clock;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 public class PiClockAlarm implements Alarm {
@@ -61,6 +62,18 @@ public class PiClockAlarm implements Alarm {
 	@Override
 	public void setActive(boolean active) {
 		this.active = active;
+		if (active && alarmDateTime.isBefore(LocalDateTime.now())) {
+			//when the alarm is activated but lies in the past make it move to the future so it doesn't run immediately
+			if (repetition == AlarmRepetition.WEEKLY) {
+				long weeksTillNow = alarmDateTime.until(LocalDateTime.now(), ChronoUnit.WEEKS);
+				alarmDateTime = alarmDateTime.plus(weeksTillNow + 1, ChronoUnit.WEEKS);
+			}
+			else {
+				//daily or none are handled the same (both as daily)
+				long daysTillNow = alarmDateTime.until(LocalDateTime.now(), ChronoUnit.DAYS);
+				alarmDateTime = alarmDateTime.plus(daysTillNow + 1, ChronoUnit.DAYS);
+			}
+		}
 	}
 	@Override
 	public LocalDateTime getDateTime() {
