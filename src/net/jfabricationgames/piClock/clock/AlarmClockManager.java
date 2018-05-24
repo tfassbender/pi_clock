@@ -1,5 +1,7 @@
 package net.jfabricationgames.piClock.clock;
 
+import java.awt.AWTException;
+import java.awt.Robot;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -82,6 +84,7 @@ public class AlarmClockManager implements TimeChangeListener {
 			try {
 				player.play();
 				activeAlarm = alarm;
+				activateScreen();
 				return true;
 			}
 			catch (IOException ioe) {
@@ -99,7 +102,6 @@ public class AlarmClockManager implements TimeChangeListener {
 		if (!alarms.isEmpty() && alarms.get(0).isActive()) {
 			LocalDateTime nextAlarmTime = alarms.get(0).getDateTime();
 			LocalDateTime now = LocalDateTime.now();
-			//days don't need to be correct... just 0 or more is necessary
 			long hours = now.until(nextAlarmTime, ChronoUnit.HOURS);
 			long minutes = now.until(nextAlarmTime, ChronoUnit.MINUTES) % 60;
 			if (hours < 24) {
@@ -144,12 +146,25 @@ public class AlarmClockManager implements TimeChangeListener {
 				if (alarm.isActive() && alarm.getDateTime().isBefore(LocalDateTime.now())) {
 					alarm.setActive(false);
 				}
-				alarms.add(new PiClockAlarm(alarm.getDateTime(), this, alarm.isActive(), alarm.getRepetition()));
+				PiClockAlarm piClockAlarm = new PiClockAlarm(alarm.getDateTime(), this, alarm.isActive(), alarm.getRepetition()); 
+				alarms.add(piClockAlarm);
+				clockManager.addTimeChangeListener(piClockAlarm);
 			}
 		}
 		catch (IOException | ClassNotFoundException e) {
 			System.err.println("Couldn't load the alarms from file");
 			e.printStackTrace();
+		}
+	}
+	
+	private void activateScreen() {
+		//wake up the screen by moving the cursor
+		try {
+			Robot robot = new Robot();
+			robot.mouseMove(100, 100);
+		}
+		catch (AWTException e) {
+			//e.printStackTrace();
 		}
 	}
 	

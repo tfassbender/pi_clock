@@ -19,6 +19,15 @@ public class RPiAudioPlayer {
 	
 	private boolean trackPaused;
 	
+	public static final int MIN_VOLUME = 0;
+	public static final int INITIAL_VOLUME = 5;
+	public static final int MAX_VOLUME = 10;
+	
+	//the default setting of the player process (omxplayer)
+	private static final int DEFAULT_VOLUME = 10;
+	
+	private int volume = INITIAL_VOLUME;
+	
 	private List<File> tracks;
 	
 	private Properties trackProperties;
@@ -107,6 +116,16 @@ public class RPiAudioPlayer {
 		playerErr = new BufferedReader(new InputStreamReader(player.getErrorStream()));
 		playerIn = new BufferedWriter(new OutputStreamWriter(player.getOutputStream()));
 		trackPaused = false;
+		//set the volume of the new started player
+		if (volume < DEFAULT_VOLUME) {
+			//MAX_VOLUME is the default (because the player can't increase the volume very much without distortion
+			int decrease = DEFAULT_VOLUME - volume;
+			for (int i = 0; i < decrease; i++) {
+				//don't use the decrease volume method because that would change the volume value
+				playerIn.write("-");
+				playerIn.flush();
+			}
+		}
 		//start a watcher thread that starts the next track when this one ends
 		//the old thread (if one) doesn't need to be interrupted because it has no loop
 		nextTrackThread = new Thread(new Runnable() {
@@ -230,9 +249,30 @@ public class RPiAudioPlayer {
 		}
 	}
 	
-	public void increaseVolume() throws IllegalStateException {
-		if (player != null) {
+	public void setVolume(int volume) throws IllegalArgumentException {
+		if (volume < MIN_VOLUME || volume > MAX_VOLUME) {
+			throw new IllegalArgumentException("The volume value must be between " + MIN_VOLUME + 
+					" and " + MAX_VOLUME + " (received value: " + volume + ")");
+		}
+		int offset = this.volume - volume;
+		if (offset > 0) {
+			//turn down volume
+			for (int i = 0; i < offset; i++) {
+				decreaseVolume();
+			}
+		}
+		else if (offset < 0) {
+			//turn up volume
+			for (int i = 0; i < offset; i++) {
+				increaseVolume();
+			}
+		}
+	}
+	
+	public void increaseVolume() {
+		if (player != null && volume < MAX_VOLUME) {
 			try {
+				volume++;
 				playerIn.write("+");
 				playerIn.flush();
 			}
@@ -242,9 +282,10 @@ public class RPiAudioPlayer {
 		}
 	}
 	
-	public void decreaseVolume() throws IllegalStateException {
-		if (player != null) {
+	public void decreaseVolume() {
+		if (player != null && volume > MIN_VOLUME) {
 			try {
+				volume--;
 				playerIn.write("-");
 				playerIn.flush();
 			}

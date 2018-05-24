@@ -32,6 +32,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import net.jfabricationgames.piClock.audio.RPiAudioPlayer;
 import net.jfabricationgames.piClock.clock.Alarm;
 import net.jfabricationgames.piClock.clock.AlarmRepetition;
 import net.miginfocom.swing.MigLayout;
@@ -333,7 +334,7 @@ public class PiClockFrameSwing extends JFrame {
 			}
 		});
 		slider.setMaximum(10);
-		slider.setValue(5);
+		slider.setValue(RPiAudioPlayer.INITIAL_VOLUME);
 		panelPlayer.add(slider, "cell 3 1 5 1");
 		
 		JLabel lblLounderThanHell = new JLabel("Wake up already!!!");
@@ -346,7 +347,7 @@ public class PiClockFrameSwing extends JFrame {
 				updateVolume(false, true);
 			}
 		});
-		spinner.setModel(new SpinnerNumberModel(5, 0, 10, 1));
+		spinner.setModel(new SpinnerNumberModel(RPiAudioPlayer.INITIAL_VOLUME, 0, 10, 1));
 		panelPlayer.add(spinner, "cell 4 2,growx");
 		
 		JButton button = new JButton("+");
@@ -404,7 +405,7 @@ public class PiClockFrameSwing extends JFrame {
 			volume = (Integer) spinner.getValue();
 			slider.setValue(volume);
 		}
-		//TODO send the new volume to the player
+		controller.setPlayerVolume(volume);
 	}
 	
 	private void increaseVolume() {

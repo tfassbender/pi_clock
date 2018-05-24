@@ -122,6 +122,10 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 		frame.updateAlarmList();
 	}
 	
+	public void setPlayerVolume(int volume) {
+		audioPlayer.setVolume(volume);
+	}
+	
 	public AlarmClockManager getAlarmManager() {
 		return alarmManager;
 	}
