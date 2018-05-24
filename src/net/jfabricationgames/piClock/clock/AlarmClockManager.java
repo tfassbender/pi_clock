@@ -63,6 +63,11 @@ public class AlarmClockManager implements TimeChangeListener {
 			return false;
 		}
 	}
+	public void stopAllAlarms() {
+		//stop any alarm that could be playing at the moment
+		player.stop();
+		activeAlarm = null;
+	}
 	
 	public void pauseAlarm(Alarm alarm, int seconds) {
 		if (activeAlarm != null) {

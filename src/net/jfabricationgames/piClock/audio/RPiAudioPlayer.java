@@ -20,7 +20,7 @@ public class RPiAudioPlayer {
 	private boolean trackPaused;
 	
 	public static final int MIN_VOLUME = 0;
-	public static final int INITIAL_VOLUME = 5;
+	public static final int INITIAL_VOLUME = 10;
 	public static final int MAX_VOLUME = 10;
 	
 	//the default setting of the player process (omxplayer)

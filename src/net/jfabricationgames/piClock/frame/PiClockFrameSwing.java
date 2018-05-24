@@ -89,7 +89,7 @@ public class PiClockFrameSwing extends JFrame {
 		
 		setTitle("PiClock");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 600, 400);
+		setBounds(100, 100, 600, 450);
 		contentPane = new JPanel();
 		contentPane.setBackground(Color.GRAY);
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -132,11 +132,11 @@ public class PiClockFrameSwing extends JFrame {
 		
 		JPanel panelAlarm = new JPanel();
 		tabbedPane.addTab("Alarm", null, panelAlarm, null);
-		panelAlarm.setLayout(new MigLayout("", "[50px][50px][30px][30px][10px][][100px,grow][100px]", "[][grow][][][][][10px][][10px][]"));
+		panelAlarm.setLayout(new MigLayout("", "[50px][50px][30px][30px][10px][][100px,grow][100px]", "[][grow][][center][center][][10px][][10px][]"));
 		
 		JLabel lblAlarms = new JLabel("Alarms:");
 		lblAlarms.setFont(new Font("Tahoma", Font.BOLD, 18));
-		panelAlarm.add(lblAlarms, "cell 5 0 3 1");
+		panelAlarm.add(lblAlarms, "cell 5 0 2 1");
 		
 		JButton btnPauseAlarm = new JButton("Pause Alarm");
 		btnPauseAlarm.addActionListener(new ActionListener() {
@@ -144,8 +144,21 @@ public class PiClockFrameSwing extends JFrame {
 				controller.pauseAlarm();
 			}
 		});
-		btnPauseAlarm.setFont(new Font("Tahoma", Font.BOLD, 30));
-		panelAlarm.add(btnPauseAlarm, "cell 0 1 4 1,alignx center");
+		btnPauseAlarm.setFont(new Font("Tahoma", Font.BOLD, 35));
+		panelAlarm.add(btnPauseAlarm, "cell 0 0 4 2,alignx center");
+		
+		chckbxAlarmActive = new JCheckBox("Alarm active");
+		chckbxAlarmActive.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (selectedAlarm != null) {
+					selectedAlarm.setActive(chckbxAlarmActive.isSelected());
+					updateAlarmList();
+					updateNextAlarmTime();
+				}
+			}
+		});
+		chckbxAlarmActive.setFont(new Font("Tahoma", Font.BOLD, 16));
+		panelAlarm.add(chckbxAlarmActive, "cell 7 0,alignx right");
 		
 		JScrollPane scrollPane = new JScrollPane();
 		panelAlarm.add(scrollPane, "cell 5 1 3 4,grow");
@@ -160,7 +173,7 @@ public class PiClockFrameSwing extends JFrame {
 		});
 		listAlarms.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		listAlarms.setBackground(Color.LIGHT_GRAY);
-		listAlarms.setFont(new Font("Tahoma", Font.BOLD, 16));
+		listAlarms.setFont(new Font("Tahoma", Font.BOLD, 18));
 		scrollPane.setViewportView(listAlarms);
 		
 		JLabel lblNewAlarm = new JLabel("New Alarm:");
@@ -168,23 +181,13 @@ public class PiClockFrameSwing extends JFrame {
 		panelAlarm.add(lblNewAlarm, "cell 0 2 4 1");
 		
 		JLabel lblHour = new JLabel("Hour:");
-		lblHour.setFont(new Font("Tahoma", Font.BOLD, 14));
-		panelAlarm.add(lblHour, "cell 0 3");
+		lblHour.setFont(new Font("Tahoma", Font.BOLD, 16));
+		panelAlarm.add(lblHour, "cell 0 3,aligny center");
 		
 		spinnerHour = new JSpinner();
+		spinnerHour.setFont(new Font("Tahoma", Font.BOLD, 16));
 		spinnerHour.setModel(new SpinnerNumberModel(7, 0, 23, 1));
 		panelAlarm.add(spinnerHour, "cell 1 3,growx");
-		
-		chckbxAlarmActive = new JCheckBox("Alarm active");
-		chckbxAlarmActive.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (selectedAlarm != null) {
-					selectedAlarm.setActive(chckbxAlarmActive.isSelected());
-					updateAlarmList();
-					updateNextAlarmTime();
-				}
-			}
-		});
 		
 		JButton btn_increase_hour = new JButton("+");
 		btn_increase_hour.addMouseListener(new MouseAdapter() {
@@ -199,7 +202,7 @@ public class PiClockFrameSwing extends JFrame {
 				spinnerButtonThread.interrupt();
 			}
 		});
-		btn_increase_hour.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btn_increase_hour.setFont(new Font("Tahoma", Font.BOLD, 30));
 		panelAlarm.add(btn_increase_hour, "cell 2 3");
 		
 		JButton btn_decrease_hour = new JButton("-");
@@ -215,7 +218,7 @@ public class PiClockFrameSwing extends JFrame {
 				spinnerButtonThread.interrupt();
 			}
 		});
-		btn_decrease_hour.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btn_decrease_hour.setFont(new Font("Tahoma", Font.BOLD, 30));
 		panelAlarm.add(btn_decrease_hour, "cell 3 3");
 		
 		JButton btn_increase_minute = new JButton("+");
@@ -231,7 +234,7 @@ public class PiClockFrameSwing extends JFrame {
 				spinnerButtonThread.interrupt();
 			}
 		});
-		btn_increase_minute.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btn_increase_minute.setFont(new Font("Tahoma", Font.BOLD, 30));
 		panelAlarm.add(btn_increase_minute, "cell 2 4");
 		
 		JButton btn_decrease_minute = new JButton("-");
@@ -247,19 +250,17 @@ public class PiClockFrameSwing extends JFrame {
 				spinnerButtonThread.interrupt();
 			}
 		});
-		btn_decrease_minute.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btn_decrease_minute.setFont(new Font("Tahoma", Font.BOLD, 30));
 		panelAlarm.add(btn_decrease_minute, "cell 3 4");
 		
 		JLabel lblNextAlarmIn = new JLabel("Next Alarm in:");
-		lblNextAlarmIn.setFont(new Font("Tahoma", Font.BOLD, 14));
-		panelAlarm.add(lblNextAlarmIn, "cell 5 5");
+		lblNextAlarmIn.setFont(new Font("Tahoma", Font.BOLD, 16));
+		panelAlarm.add(lblNextAlarmIn, "cell 5 5,aligny center");
 		
 		lblNextAlarmTime = new JLabel("");
 		lblNextAlarmTime.setForeground(Color.RED);
-		lblNextAlarmTime.setFont(new Font("Tahoma", Font.BOLD, 14));
-		panelAlarm.add(lblNextAlarmTime, "cell 6 5,alignx center");
-		chckbxAlarmActive.setFont(new Font("Tahoma", Font.BOLD, 14));
-		panelAlarm.add(chckbxAlarmActive, "cell 7 5,alignx right");
+		lblNextAlarmTime.setFont(new Font("Tahoma", Font.BOLD, 30));
+		panelAlarm.add(lblNextAlarmTime, "cell 6 5 2 1,alignx center,aligny center");
 		
 		JButton btnAlarmOff = new JButton("Alarm Off");
 		btnAlarmOff.setForeground(Color.RED);
@@ -268,26 +269,28 @@ public class PiClockFrameSwing extends JFrame {
 				controller.stopAlarm();
 			}
 		});
-		btnAlarmOff.setFont(new Font("Tahoma", Font.BOLD, 30));
+		btnAlarmOff.setFont(new Font("Tahoma", Font.BOLD, 40));
 		panelAlarm.add(btnAlarmOff, "cell 5 7 3 3,alignx center");
 		
 		JLabel lblMinute = new JLabel("Minute:");
-		lblMinute.setFont(new Font("Tahoma", Font.BOLD, 14));
-		panelAlarm.add(lblMinute, "cell 0 4");
+		lblMinute.setFont(new Font("Tahoma", Font.BOLD, 16));
+		panelAlarm.add(lblMinute, "cell 0 4,aligny center");
 		
 		spinnerMinute = new JSpinner();
+		spinnerMinute.setFont(new Font("Tahoma", Font.BOLD, 16));
 		spinnerMinute.setModel(new SpinnerNumberModel(0, 0, 59, 1));
 		panelAlarm.add(spinnerMinute, "cell 1 4,growx");
 		
 		JLabel lblRepeat = new JLabel("Repeat:");
-		lblRepeat.setFont(new Font("Tahoma", Font.BOLD, 14));
-		panelAlarm.add(lblRepeat, "cell 0 5,alignx trailing");
+		lblRepeat.setFont(new Font("Tahoma", Font.BOLD, 16));
+		panelAlarm.add(lblRepeat, "cell 0 5,alignx trailing,aligny center");
 		
 		DefaultComboBoxModel<AlarmRepetition> comboBoxModel = new DefaultComboBoxModel<AlarmRepetition>();
 		for (AlarmRepetition repetition : AlarmRepetition.values()) {
 			comboBoxModel.addElement(repetition);
 		}
 		comboBox = new JComboBox<AlarmRepetition>(comboBoxModel);
+		comboBox.setFont(new Font("Tahoma", Font.PLAIN, 16));
 		panelAlarm.add(comboBox, "cell 1 5 3 1,growx");
 		
 		JButton btnAddAlarm = new JButton("Add Alarm");
@@ -299,7 +302,7 @@ public class PiClockFrameSwing extends JFrame {
 				updateNextAlarmTime();
 			}
 		});
-		btnAddAlarm.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btnAddAlarm.setFont(new Font("Tahoma", Font.BOLD, 25));
 		panelAlarm.add(btnAddAlarm, "cell 0 7 4 1,alignx center,aligny top");
 		
 		JButton btnRemoveAlarm = new JButton("Remove Alarm");
@@ -312,7 +315,7 @@ public class PiClockFrameSwing extends JFrame {
 				updateNextAlarmTime();
 			}
 		});
-		btnRemoveAlarm.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btnRemoveAlarm.setFont(new Font("Tahoma", Font.BOLD, 25));
 		panelAlarm.add(btnRemoveAlarm, "cell 0 9 4 1,alignx center");
 		
 		JPanel panelPlayer = new JPanel();
@@ -324,7 +327,7 @@ public class PiClockFrameSwing extends JFrame {
 		panelPlayer.add(lblVolume, "cell 0 0 8 1");
 		
 		JLabel lblScilence = new JLabel("I want to sleep...");
-		lblScilence.setFont(new Font("Tahoma", Font.BOLD, 14));
+		lblScilence.setFont(new Font("Tahoma", Font.BOLD, 18));
 		panelPlayer.add(lblScilence, "cell 0 1 3 1");
 		
 		slider = new JSlider();
@@ -338,17 +341,18 @@ public class PiClockFrameSwing extends JFrame {
 		panelPlayer.add(slider, "cell 3 1 5 1");
 		
 		JLabel lblLounderThanHell = new JLabel("Wake up already!!!");
-		lblLounderThanHell.setFont(new Font("Tahoma", Font.BOLD, 14));
+		lblLounderThanHell.setFont(new Font("Tahoma", Font.BOLD, 18));
 		panelPlayer.add(lblLounderThanHell, "cell 8 1");
 		
 		spinner = new JSpinner();
+		spinner.setFont(new Font("Tahoma", Font.BOLD, 18));
 		spinner.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				updateVolume(false, true);
 			}
 		});
 		spinner.setModel(new SpinnerNumberModel(RPiAudioPlayer.INITIAL_VOLUME, 0, 10, 1));
-		panelPlayer.add(spinner, "cell 4 2,growx");
+		panelPlayer.add(spinner, "cell 4 2,growx,aligny center");
 		
 		JButton button = new JButton("+");
 		button.addActionListener(new ActionListener() {
@@ -356,7 +360,7 @@ public class PiClockFrameSwing extends JFrame {
 				increaseVolume();
 			}
 		});
-		button.setFont(new Font("Tahoma", Font.BOLD, 14));
+		button.setFont(new Font("Tahoma", Font.BOLD, 30));
 		panelPlayer.add(button, "cell 5 2");
 		
 		JButton button_1 = new JButton("-");
@@ -365,7 +369,7 @@ public class PiClockFrameSwing extends JFrame {
 				decreaseVolume();
 			}
 		});
-		button_1.setFont(new Font("Tahoma", Font.BOLD, 14));
+		button_1.setFont(new Font("Tahoma", Font.BOLD, 30));
 		panelPlayer.add(button_1, "cell 6 2");
 		
 		JLabel lblTracklist = new JLabel("Tracklist:");
@@ -377,35 +381,37 @@ public class PiClockFrameSwing extends JFrame {
 		
 		JList<String> list = new JList<String>();
 		list.setBackground(Color.LIGHT_GRAY);
-		list.setFont(new Font("Tahoma", Font.BOLD, 14));
+		list.setFont(new Font("Tahoma", Font.BOLD, 18));
 		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		scrollPane_1.setViewportView(list);
 		
 		JButton btnPlay = new JButton("Play");
-		btnPlay.setFont(new Font("Tahoma", Font.BOLD, 16));
+		btnPlay.setFont(new Font("Tahoma", Font.BOLD, 25));
 		panelPlayer.add(btnPlay, "cell 1 6,growx");
 		
 		JButton btnPause = new JButton("Pause");
-		btnPause.setFont(new Font("Tahoma", Font.BOLD, 16));
+		btnPause.setFont(new Font("Tahoma", Font.BOLD, 25));
 		panelPlayer.add(btnPause, "cell 1 7,growx");
 		
 		JButton btnStop = new JButton("Stop");
-		btnStop.setFont(new Font("Tahoma", Font.BOLD, 16));
+		btnStop.setFont(new Font("Tahoma", Font.BOLD, 25));
 		panelPlayer.add(btnStop, "cell 1 8,growx");
 	}
 	
 	private void updateVolume(boolean sliderCalling, boolean spinnerCalling) {
 		int volume;
-		if (sliderCalling) {
-			volume = slider.getValue();
-			spinner.setValue(volume);
+		if (spinner != null) {
+			if (sliderCalling) {
+				volume = slider.getValue();
+				spinner.setValue(volume);
+			}
+			else {
+				//spinner (or indirect buttons) calling
+				volume = (Integer) spinner.getValue();
+				slider.setValue(volume);
+			}
+			controller.setPlayerVolume(volume);			
 		}
-		else {
-			//spinner (or indirect buttons) calling
-			volume = (Integer) spinner.getValue();
-			slider.setValue(volume);
-		}
-		controller.setPlayerVolume(volume);
 	}
 	
 	private void increaseVolume() {
