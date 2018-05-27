@@ -8,6 +8,8 @@ public class PiClockSerialConnection implements SerialMessageListener {
 	private static final String COMMAND_SET_CLOCK = "C ";
 	private static final String COMMAND_GET_TEMPERATURE = "T";
 	private static final String COMMAND_GET_HUMIDITY = "H";
+	private static final String COMMAND_SET_ALARM_SWITCH = "A ";
+	
 	private static final String COMMAND_END_SIGN = ";";
 	
 	public static final int DEFAULT_TIMEOUT = 50;
@@ -17,6 +19,7 @@ public class PiClockSerialConnection implements SerialMessageListener {
 	private SerialConnection serialConnection;
 	
 	private Queue<CallbackRequest> callbackRequests;
+	private CallbackRequest alarmSwitchCallbackRequest;
 	
 	public PiClockSerialConnection() {
 		serialConnection = new SerialConnection();
@@ -33,6 +36,9 @@ public class PiClockSerialConnection implements SerialMessageListener {
 		CallbackRequest callback = callbackRequests.poll();
 		if (callback != null) {
 			callback.getCallback().receiveMessage(message, callback.getCause());
+		}
+		else if (alarmSwitchCallbackRequest != null) {
+			alarmSwitchCallbackRequest.getCallback().receiveMessage(message, alarmSwitchCallbackRequest.getCause());
 		}
 		else {
 			System.err.println("Received a serial message but have no callback requests in the queue...");
@@ -75,6 +81,21 @@ public class PiClockSerialConnection implements SerialMessageListener {
 		lastReceivedMessage = null;
 		callbackRequests.offer(new CallbackRequest(callback, cause));
 		serialConnection.sendMessage(COMMAND_GET_HUMIDITY + COMMAND_END_SIGN);
+	}
+	
+	public void setAlarmSwitchEnabled(SerialMessageReceiver receiver, boolean enabled, int cause) {
+		//no callback because the callback could come at any time and can't be queued
+		String message = COMMAND_SET_ALARM_SWITCH;
+		if (enabled) {
+			alarmSwitchCallbackRequest = new CallbackRequest(receiver, cause);
+			message += '1';
+		}
+		else {
+			alarmSwitchCallbackRequest = null;
+			message += '0';
+		}
+		message += COMMAND_END_SIGN;
+		serialConnection.sendMessage(message);
 	}
 	
 	public String getLastReceivedMessage() {

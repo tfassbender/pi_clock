@@ -17,11 +17,14 @@ import java.util.Objects;
 
 import net.jfabricationgames.piClock.audio.RPiAudioPlayer;
 import net.jfabricationgames.piClock.frame.PiClockSwingController;
+import net.jfabricationgames.piClock.serial.SerialMessageReceiver;
 
-public class AlarmClockManager implements TimeChangeListener {
+public class AlarmClockManager implements TimeChangeListener, SerialMessageReceiver {
 	
 	private static final String PROPERTIES_DIR = ".pi_clock_properties";
 	private static final String ALARM_FILE = "alarms";
+	
+	private static final int RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH = 3;
 	
 	private List<Alarm> alarms;
 	private ClockManager clockManager;
@@ -57,6 +60,7 @@ public class AlarmClockManager implements TimeChangeListener {
 		if (activeAlarm != null && activeAlarm.equals(alarm)) {
 			player.stop();
 			activeAlarm = null;
+			controller.setAlarmSwitchEnabled(this, false, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
 			return true;
 		}
 		else {
@@ -67,6 +71,7 @@ public class AlarmClockManager implements TimeChangeListener {
 		//stop any alarm that could be playing at the moment
 		player.stop();
 		activeAlarm = null;
+		controller.setAlarmSwitchEnabled(this, false, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
 	}
 	
 	public void pauseAlarm(Alarm alarm, int seconds) {
@@ -90,6 +95,7 @@ public class AlarmClockManager implements TimeChangeListener {
 				player.play();
 				activeAlarm = alarm;
 				activateScreen();
+				controller.setAlarmSwitchEnabled(this, true, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
 				return true;
 			}
 			catch (IOException ioe) {
@@ -184,5 +190,13 @@ public class AlarmClockManager implements TimeChangeListener {
 	@Override
 	public void timeChanged(LocalDateTime time) {
 		updateNextAlarm();
+	}
+	
+	@Override
+	public void receiveMessage(String message, int cause) {
+		if (cause != RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH) {
+			throw new IllegalStateException("The received message cause id is unknown: " + cause);
+		}
+		controller.stopAlarm();
 	}
 }

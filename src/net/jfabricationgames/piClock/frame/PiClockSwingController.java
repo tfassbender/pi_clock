@@ -15,6 +15,7 @@ import net.jfabricationgames.piClock.clock.ClockManager;
 import net.jfabricationgames.piClock.clock.PiClockAlarm;
 import net.jfabricationgames.piClock.clock.TimeChangeListener;
 import net.jfabricationgames.piClock.serial.PiClockSerialConnection;
+import net.jfabricationgames.piClock.serial.SerialMessageReceiver;
 import net.jfabricationgames.piClock.temperature.TemperatureChangeListener;
 import net.jfabricationgames.piClock.temperature.TemperatureManager;
 
@@ -86,6 +87,9 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 		if (activeAlarm != null) {
 			alarmManager.stopAlarm(activeAlarm);
 		}
+		else {
+			alarmManager.stopAllAlarms();
+		}
 	}
 	
 	public void pauseAlarm() {
@@ -128,5 +132,12 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	
 	public AlarmClockManager getAlarmManager() {
 		return alarmManager;
+	}
+	
+	/**
+	 * Enable or disable the microcontroller's alarm switch function.
+	 */
+	public void setAlarmSwitchEnabled(SerialMessageReceiver receiver, boolean enabled, int cause) {
+		serialConnection.setAlarmSwitchEnabled(receiver, enabled, cause);
 	}
 }
