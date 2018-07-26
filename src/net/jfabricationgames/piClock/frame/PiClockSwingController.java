@@ -7,6 +7,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.jfabricationgames.piClock.audio.RPiAudioPlayer;
 import net.jfabricationgames.piClock.clock.Alarm;
 import net.jfabricationgames.piClock.clock.AlarmClockManager;
@@ -21,6 +24,8 @@ import net.jfabricationgames.piClock.temperature.TemperatureManager;
 
 public class PiClockSwingController implements TimeChangeListener, TemperatureChangeListener{
 	
+	private Logger LOGGER = LogManager.getLogger(PiClockSwingController.class);
+	
 	private PiClockFrameSwing frame;
 	
 	private DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm");
@@ -34,6 +39,9 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	public PiClockSwingController(PiClockFrameSwing frame) {
 		this.frame = frame;
 		
+		LOGGER.info("Creating pi clock swing controller");
+		LOGGER.info("Initializing serial connection, clock manager, tempeature manager, audio player and alarm manager");
+		
 		serialConnection = new PiClockSerialConnection();
 		clockManager = new ClockManager(serialConnection);
 		temperatureManager = new TemperatureManager(serialConnection);
@@ -43,6 +51,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 			clockManager.addTimeChangeListener(alarmManager);
 		}
 		catch (IOException ioe) {
+			LOGGER.error("Could not initialize audio player or alarm manager", ioe);
 			ioe.printStackTrace();
 		}
 		clockManager.addTimeChangeListener(this);
@@ -70,6 +79,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	}
 	
 	public void addAlarm(int hour, int minute, AlarmRepetition repetition) {
+		LOGGER.info("Creating new alarm for: {}:{} (repetition: {}", hour, minute, repetition);
 		LocalDateTime alarmDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.of(hour, minute));
 		if (alarmDateTime.isBefore(LocalDateTime.now())) {
 			alarmDateTime = alarmDateTime.plusDays(1);
@@ -113,6 +123,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	}
 	
 	public void stopAll() {
+		LOGGER.info("Stopping clock manager, temperature manager and closing serial connection");
 		clockManager.stop();
 		temperatureManager.stop();
 		serialConnection.close();

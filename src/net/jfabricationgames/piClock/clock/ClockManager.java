@@ -4,9 +4,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.jfabricationgames.piClock.serial.PiClockSerialConnection;
 
 public class ClockManager implements Runnable {
+	
+	private Logger LOGGER = LogManager.getLogger(ClockManager.class);
 	
 	private int lastTimeMinutes;
 	
@@ -25,6 +30,7 @@ public class ClockManager implements Runnable {
 		timeChangeListeners = new ArrayList<TimeChangeListener>();
 		clockManager = new Thread(this, "ClockManagerThread");
 		clockManager.start();
+		LOGGER.info("Clock manager started");
 	}
 	
 	@Override
@@ -50,13 +56,16 @@ public class ClockManager implements Runnable {
 	}
 	
 	public void stop() {
+		LOGGER.info("Stopping clock manager");
 		clockManager.interrupt();
 	}
 	
 	private void updateClock(LocalDateTime time) {
+		LOGGER.info("Sending clock update via serial connection");
 		piClockConnection.sendTime(time.getHour(), time.getMinute());
 	}
 	private void informListeners(LocalDateTime time) {
+		LOGGER.trace("Informing listeners about time change");
 		for (TimeChangeListener listener : timeChangeListeners) {
 			listener.timeChanged(time);
 		}

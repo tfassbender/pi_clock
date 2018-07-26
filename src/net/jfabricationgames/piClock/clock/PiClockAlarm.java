@@ -5,7 +5,12 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class PiClockAlarm implements Alarm {
+	
+	private Logger LOGGER = LogManager.getLogger(PiClockAlarm.class);
 	
 	private static final long serialVersionUID = -1312956845922157557L;
 	
@@ -61,6 +66,7 @@ public class PiClockAlarm implements Alarm {
 	}
 	@Override
 	public void setActive(boolean active) {
+		LOGGER.info("Changed active state of alarm to {}", active);
 		this.active = active;
 		if (active && alarmDateTime.isBefore(LocalDateTime.now())) {
 			//when the alarm is activated but lies in the past make it move to the future so it doesn't run immediately
@@ -85,10 +91,12 @@ public class PiClockAlarm implements Alarm {
 	}
 	@Override
 	public void stop() {
+		LOGGER.info("Stopping alarm");
 		manager.stopAlarm(this);
 	}
 	@Override
 	public void pause(int seconds) {
+		LOGGER.info("Pausing alarm for {} seconds", seconds);
 		paused = manager.pauseAlarm(this);
 		if (paused) {
 			Thread resumerThread = new Thread(new Runnable() {
@@ -117,6 +125,7 @@ public class PiClockAlarm implements Alarm {
 	}
 	
 	private void resumeAlarm() {
+		LOGGER.info("Resuming alarm");
 		if (paused) {
 			if (manager.playAlarm(this)) {
 				paused = false;

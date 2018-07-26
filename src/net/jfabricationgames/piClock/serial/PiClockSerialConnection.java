@@ -3,7 +3,12 @@ package net.jfabricationgames.piClock.serial;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class PiClockSerialConnection implements SerialMessageListener {
+	
+	private Logger LOGGER = LogManager.getLogger(PiClockSerialConnection.class);
 	
 	private static final String COMMAND_SET_CLOCK = "C ";
 	private static final String COMMAND_GET_TEMPERATURE = "T";
@@ -24,7 +29,9 @@ public class PiClockSerialConnection implements SerialMessageListener {
 	public PiClockSerialConnection() {
 		serialConnection = new SerialConnection();
 		if (!serialConnection.initialize()) {
-			throw new IllegalStateException("Couldn't initialize the SerialConnection for unknown reasons.");
+			IllegalStateException ise = new IllegalStateException("Couldn't initialize the SerialConnection for unknown reasons.");
+			LOGGER.error("Could not initialize the serial connection", ise);
+			throw ise;
 		}
 		serialConnection.addSerialMessageListener(this);
 		callbackRequests = new ArrayDeque<CallbackRequest>();
@@ -32,6 +39,7 @@ public class PiClockSerialConnection implements SerialMessageListener {
 	
 	@Override
 	public void receiveSerialMessage(String message) {
+		LOGGER.trace("Received serial message: {}", message);
 		lastReceivedMessage = message;
 		CallbackRequest callback = callbackRequests.poll();
 		if (callback != null) {
@@ -41,11 +49,13 @@ public class PiClockSerialConnection implements SerialMessageListener {
 			alarmSwitchCallbackRequest.getCallback().receiveMessage(message, alarmSwitchCallbackRequest.getCause());
 		}
 		else {
+			LOGGER.warn("Received a serial message but have no callback request in the queue");
 			System.err.println("Received a serial message but have no callback requests in the queue...");
 		}
 	}
 	
 	public void close() {
+		LOGGER.info("Closing serial connection");
 		serialConnection.close();
 	}
 	
@@ -68,19 +78,24 @@ public class PiClockSerialConnection implements SerialMessageListener {
 		clockText += minute;
 		clockText += COMMAND_END_SIGN;
 		//send the new time to via the serial port
+		LOGGER.info("Sending time via serial connection (serial message: {})", clockText);
 		serialConnection.sendMessage(clockText);
 	}
 	
 	public void getTemperature(SerialMessageReceiver callback, int cause) {
 		lastReceivedMessage = null;
 		callbackRequests.offer(new CallbackRequest(callback, cause));
-		serialConnection.sendMessage(COMMAND_GET_TEMPERATURE + COMMAND_END_SIGN);
+		String message = COMMAND_GET_TEMPERATURE + COMMAND_END_SIGN;
+		LOGGER.info("Sending temperatue request via serial connection (serial message: {})", message);
+		serialConnection.sendMessage(message);
 	}
 	
 	public void getHumidity(SerialMessageReceiver callback, int cause) {
 		lastReceivedMessage = null;
 		callbackRequests.offer(new CallbackRequest(callback, cause));
-		serialConnection.sendMessage(COMMAND_GET_HUMIDITY + COMMAND_END_SIGN);
+		String message = COMMAND_GET_HUMIDITY + COMMAND_END_SIGN;
+		LOGGER.info("Sending humidity request via serial connection (serial message: {})", message);
+		serialConnection.sendMessage(message);
 	}
 	
 	public void setAlarmSwitchEnabled(SerialMessageReceiver receiver, boolean enabled, int cause) {
@@ -95,6 +110,7 @@ public class PiClockSerialConnection implements SerialMessageListener {
 			message += '0';
 		}
 		message += COMMAND_END_SIGN;
+		LOGGER.info("Sending alarm switch state change via serial connection (serial message: {})", message);
 		serialConnection.sendMessage(message);
 	}
 	

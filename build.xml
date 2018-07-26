@@ -2,8 +2,8 @@
 <project name="PiClock" default="build_jars" basedir=".">
 
 	<property name="version.mayor">1</property>
-	<property name="version.minor">1</property>
-	<property name="version.patch">1</property>
+	<property name="version.minor">2</property>
+	<property name="version.patch">0</property>
 
 	<property name="version_number">${version.mayor}.${version.minor}.${version.patch}</property>
 	<property name="version">V${version_number}</property>
@@ -24,10 +24,14 @@
 
 	<property name="path_elem_rxtx">lib/rxtx-2.1.7.jar</property>
 	<property name="path_elem_miglayout">miglayout15-swing.jar</property>
+	<property name="path_elem_log4j2_api">lib/log4j-api-2.11.0.jar</property>
+	<property name="path_elem_log4j2_core">lib/log4j-core-2.11.0.jar</property>
 	
 	<path id="classpath">
 		<pathelement path="${path_elem_rxtx}"/>
 		<pathelement path="${path_elem_miglayout}"/>
+		<pathelement path="${path_elem_log4j2_api}"/>
+		<pathelement path="${path_elem_log4j2_core}"/>
 	</path>
 
 	<target name="init">

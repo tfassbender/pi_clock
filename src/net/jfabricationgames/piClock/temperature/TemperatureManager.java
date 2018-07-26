@@ -3,10 +3,15 @@ package net.jfabricationgames.piClock.temperature;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.jfabricationgames.piClock.serial.PiClockSerialConnection;
 import net.jfabricationgames.piClock.serial.SerialMessageReceiver;
 
 public class TemperatureManager implements Runnable, SerialMessageReceiver {
+	
+	private Logger LOGGER = LogManager.getLogger(TemperatureManager.class);
 	
 	private static final int MAX_TEMPERATURE_VALUES = 10;
 	private static final int MAX_HUMIDITY_VALUES = 10;
@@ -33,6 +38,7 @@ public class TemperatureManager implements Runnable, SerialMessageReceiver {
 		lastHumidityValues = new ArrayList<Integer>(MAX_HUMIDITY_VALUES+1);
 		temperatureManager = new Thread(this, "TemperatureManagerThread");
 		temperatureManager.start();
+		LOGGER.info("Temperature (-request) thread started"); 
 	}
 	
 	@Override
@@ -58,6 +64,7 @@ public class TemperatureManager implements Runnable, SerialMessageReceiver {
 	}
 	
 	public void stop() {
+		LOGGER.info("Stopping temperature manager");
 		temperatureManager.interrupt();
 	}
 	
@@ -71,6 +78,7 @@ public class TemperatureManager implements Runnable, SerialMessageReceiver {
 	}
 	
 	private void informListeners() {
+		LOGGER.trace("Informing listeners about temperature or humidity change");
 		double temperature = 0;
 		double humidity = 0;
 		for (int t : lastTemperatureValues) {

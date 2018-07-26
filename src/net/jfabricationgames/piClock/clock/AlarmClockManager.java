@@ -15,11 +15,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.jfabricationgames.piClock.audio.RPiAudioPlayer;
 import net.jfabricationgames.piClock.frame.PiClockSwingController;
 import net.jfabricationgames.piClock.serial.SerialMessageReceiver;
 
 public class AlarmClockManager implements TimeChangeListener, SerialMessageReceiver {
+	
+	private Logger LOGGER = LogManager.getLogger(AlarmClockManager.class);
 	
 	private static final String PROPERTIES_DIR = ".pi_clock_properties";
 	private static final String ALARM_FILE = "alarms";
@@ -44,10 +49,12 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 	}
 	
 	public void addAlarm(Alarm alarm) {
+		LOGGER.info("Adding alarm: {}", alarm);
 		alarms.add(alarm);
 		clockManager.addTimeChangeListener(alarm);
 	}
 	public void removeAlarm(Alarm alarm) {
+		LOGGER.info("Removing alarm: {}", alarm);
 		alarms.remove(alarm);
 		clockManager.removeTimeChangeListener(alarm);
 	}
@@ -57,6 +64,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 	}
 	
 	public boolean stopAlarm(Alarm alarm) {
+		LOGGER.info("Stopping alarm ({})", alarm);
 		if (activeAlarm != null && activeAlarm.equals(alarm)) {
 			player.stop();
 			activeAlarm = null;
@@ -68,6 +76,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 		}
 	}
 	public void stopAllAlarms() {
+		LOGGER.info("Stopping all alarms");
 		//stop any alarm that could be playing at the moment
 		player.stop();
 		activeAlarm = null;
@@ -75,11 +84,13 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 	}
 	
 	public void pauseAlarm(Alarm alarm, int seconds) {
+		LOGGER.info("Pausing alarm ({}) for {} seconds", alarm, seconds);
 		if (activeAlarm != null) {
 			activeAlarm.pause(seconds);
 		}
 	}
 	protected boolean pauseAlarm(Alarm alarm) {
+		LOGGER.info("Pausing alarm ({})", alarm);
 		if (activeAlarm != null && activeAlarm.equals(alarm) && !activeAlarm.isPaused()) {
 			player.pause();
 			return true;
@@ -90,6 +101,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 	}
 	
 	public boolean playAlarm(Alarm alarm) {
+		LOGGER.info("Playing alarm ({})", alarm);
 		if (activeAlarm == null || activeAlarm.equals(alarm)) {
 			try {
 				player.play();
@@ -99,6 +111,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 				return true;
 			}
 			catch (IOException ioe) {
+				LOGGER.error("Could not play alarm", ioe);
 				ioe.printStackTrace();
 				return false;
 			}
@@ -116,7 +129,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 			long hours = now.until(nextAlarmTime, ChronoUnit.HOURS);
 			long minutes = now.until(nextAlarmTime, ChronoUnit.MINUTES) % 60;
 			if (hours < 24) {
-				controller.setTimeTillNextAlarm((int) hours, (int) minutes);
+				controller.setTimeTillNextAlarm((int) hours, (int) minutes + 1);//+1 minute to improve the output
 			}
 			else {
 				//no active alarm in the next 24 hours
@@ -130,6 +143,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 	}
 	
 	public void storeAlarms() {
+		LOGGER.info("Storing alarms to file");
 		try (ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(new File(PROPERTIES_DIR + "/" + ALARM_FILE)))) {
 			//write the number of alarms and the alarm objects to the file
 			writer.writeInt(alarms.size());
@@ -138,11 +152,13 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 			}
 		}
 		catch (IOException ioe) {
+			LOGGER.error("Could not store alarms to file", ioe);
 			System.err.println("Couldn't store the alarms.");
 			ioe.printStackTrace();
 		}
 	}
 	public void loadAlarms() {
+		LOGGER.info("Loading alarms from file");
 		try (ObjectInputStream reader = new ObjectInputStream(new FileInputStream(new File(PROPERTIES_DIR + "/" + ALARM_FILE)))) {
 			//read the number of alarm objects
 			int alarmCount = reader.readInt();
@@ -163,6 +179,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 			}
 		}
 		catch (IOException | ClassNotFoundException e) {
+			LOGGER.error("Could not load alarms from file", e);
 			System.err.println("Couldn't load the alarms from file");
 			e.printStackTrace();
 		}

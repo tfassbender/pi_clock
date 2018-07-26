@@ -15,7 +15,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class RPiAudioPlayer {
+	
+	private Logger LOGGER = LogManager.getLogger(RPiAudioPlayer.class);
 	
 	private boolean trackPaused;
 	
@@ -54,12 +59,14 @@ public class RPiAudioPlayer {
 			String trackDir = trackProperties.getProperty(TRACK_DIR_PROPERTY);
 			if (trackDir == null) {
 				//add the property if it isn't found in the file
+				LOGGER.warn("Setting track dir property to default because it was not found in the file (path: " + DEFAULT_TRACK_DIR + ")");
 				trackProperties.setProperty(TRACK_DIR_PROPERTY, DEFAULT_TRACK_DIR);
 				try (OutputStream outStream = new FileOutputStream(new File(TRACK_PROPERTIES_PATH))) {
 					trackProperties.store(outStream, "set the path to the tracks, that are to be played as alarm, here");
 				}
 				catch (IOException ioe2) {
-					throw new IOException("Couldn't create a properties file.", ioe2); 
+					LOGGER.error("Could not create a properties file", ioe2);
+					throw new IOException("Couldn't create a properties file.", ioe2);
 				}
 			}
 			else {
@@ -67,6 +74,7 @@ public class RPiAudioPlayer {
 			}
 		}
 		catch (IOException ioe) {
+			LOGGER.warn("Could not open properties file. Creating default file");
 			System.err.println("Couldn't open properties file. Creating default file.");
 			//try to create the properties file if there is none
 			trackProperties.setProperty(TRACK_DIR_PROPERTY, DEFAULT_TRACK_DIR);
@@ -78,6 +86,7 @@ public class RPiAudioPlayer {
 				trackProperties.store(outStream, "set the path to the tracks, that are to be played as alarm, here");
 			}
 			catch (IOException ioe2) {
+				LOGGER.error("Could not create a default properties file", ioe2);
 				throw new IOException("Couldn't create a properties file.", ioe2); 
 			}
 			loadTracks(DEFAULT_TRACK_DIR);
@@ -85,19 +94,25 @@ public class RPiAudioPlayer {
 	}
 	
 	private void loadTracks(String trackDir) throws IllegalStateException {
+		LOGGER.info("Loading tracks from dir: {}", trackDir);
 		File dir = new File(trackDir);
 		if (dir.exists() && dir.isDirectory()) {
 			tracks = Arrays.stream(dir.listFiles()).filter(file -> file.getName().endsWith(".mp3")).collect(Collectors.toList());
 			if (tracks.isEmpty()) {
-				throw new IllegalStateException("The track directory doesn't contain any '.mp3' files");
+				IllegalStateException ise = new IllegalStateException("The track directory doesn't contain any '.mp3' files");
+				LOGGER.error("Found no tracks in the track directory", ise);
+				throw ise;
 			}
 		}
 		else {
-			throw new IllegalStateException("The chosen track directory doesn't exist or is no directory (chosen dir: " + trackDir + "");
+			IllegalStateException ise = new IllegalStateException("The chosen track directory doesn't exist or is no directory (chosen dir: " + trackDir + "");
+			LOGGER.error("Track directory doesn't exist", ise);
+			throw ise;
 		}
 	}
 	
 	public void createPlayer() throws IOException {
+		LOGGER.info("Creating player");
 		if (player != null) {
 			player.destroy();
 			try {
@@ -106,7 +121,7 @@ public class RPiAudioPlayer {
 				playerIn.close();
 			}
 			catch (IOException ioe) {
-				//ioe.printStackTrace();
+				LOGGER.warn("Problems while closing the last players streams", ioe);
 			}
 		}
 		int randomTrackNumber = (int) (Math.random() * tracks.size());
@@ -144,6 +159,7 @@ public class RPiAudioPlayer {
 					playerErr.close();					
 				}
 				catch (IOException ioe) {
+					LOGGER.warn("Problems while closing the streams of the ending player", ioe);
 					ioe.printStackTrace();
 				}
 				//start the new track
@@ -152,6 +168,7 @@ public class RPiAudioPlayer {
 						play();
 					}
 					catch (IOException ioe) {
+						LOGGER.error("Could not play track", ioe);
 						ioe.printStackTrace();
 					}					
 				}
@@ -163,6 +180,7 @@ public class RPiAudioPlayer {
 	}
 	
 	public void play() throws IOException {
+		LOGGER.info("Playing track");
 		if (player == null) {
 			//create a new player and play a random track
 			createPlayer();
@@ -185,6 +203,7 @@ public class RPiAudioPlayer {
 	}
 	
 	public void pause() {
+		LOGGER.info("Pausing player");
 		if (player != null) {
 			try {
 				playerIn.write("p");
@@ -192,12 +211,14 @@ public class RPiAudioPlayer {
 				trackPaused = true;
 			}
 			catch (IOException ioe) {
+				LOGGER.error("Could not pause the player", ioe);
 				ioe.printStackTrace();
 			}
 		}
 	}
 	
 	public void stop() throws IllegalStateException {
+		LOGGER.info("Stoping the player");
 		if (player != null) {
 			try {
 				//interrupt the thread first to prevent it from restarting
@@ -217,6 +238,7 @@ public class RPiAudioPlayer {
 				playerErr.close();
 			}
 			catch (IOException ioe) {
+				LOGGER.error("Problems while stopping the player", ioe);
 				ioe.printStackTrace();
 			}
 			catch (InterruptedException ie) {
@@ -240,6 +262,7 @@ public class RPiAudioPlayer {
 	}
 	
 	public void nextTrack() throws IOException {
+		LOGGER.info("Playing next track");
 		try {
 			stop();
 			play();
@@ -250,6 +273,7 @@ public class RPiAudioPlayer {
 	}
 	
 	public void setVolume(int volume) throws IllegalArgumentException {
+		LOGGER.info("Setting volume to {}", volume);
 		if (volume < MIN_VOLUME || volume > MAX_VOLUME) {
 			throw new IllegalArgumentException("The volume value must be between " + MIN_VOLUME + 
 					" and " + MAX_VOLUME + " (received value: " + volume + ")");
@@ -270,6 +294,7 @@ public class RPiAudioPlayer {
 	}
 	
 	public void increaseVolume() {
+		LOGGER.trace("Increasing volume");
 		if (player != null && volume < MAX_VOLUME) {
 			try {
 				volume++;
@@ -277,12 +302,14 @@ public class RPiAudioPlayer {
 				playerIn.flush();
 			}
 			catch (IOException ioe) {
+				LOGGER.error("Could not increase volume", ioe);
 				ioe.printStackTrace();
 			}
 		}
 	}
 	
 	public void decreaseVolume() {
+		LOGGER.trace("Decreasing volume");
 		if (player != null && volume > MIN_VOLUME) {
 			try {
 				volume--;
@@ -290,6 +317,7 @@ public class RPiAudioPlayer {
 				playerIn.flush();
 			}
 			catch (IOException ioe) {
+				LOGGER.error("Could not decrease volume", ioe);
 				ioe.printStackTrace();
 			}
 		}
