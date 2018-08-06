@@ -46,7 +46,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 		clockManager = new ClockManager(serialConnection);
 		temperatureManager = new TemperatureManager(serialConnection);
 		try {
-			audioPlayer = new RPiAudioPlayer();
+			audioPlayer = new RPiAudioPlayer(serialConnection);
 			alarmManager = new AlarmClockManager(clockManager, audioPlayer, this);
 			clockManager.addTimeChangeListener(alarmManager);
 		}

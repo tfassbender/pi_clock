@@ -214,6 +214,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 		if (cause != RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH) {
 			throw new IllegalStateException("The received message cause id is unknown: " + cause);
 		}
+		LOGGER.info("Received alarm stop from alarm switch (via serial port; message: " + message + "; cause: " + cause + ")");
 		controller.stopAlarm();
 	}
 }

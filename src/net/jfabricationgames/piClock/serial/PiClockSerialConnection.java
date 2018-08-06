@@ -14,6 +14,7 @@ public class PiClockSerialConnection implements SerialMessageListener {
 	private static final String COMMAND_GET_TEMPERATURE = "T";
 	private static final String COMMAND_GET_HUMIDITY = "H";
 	private static final String COMMAND_SET_ALARM_SWITCH = "A ";
+	private static final String COMMAND_SET_SPEAKER_AMPLIFIER = "S ";
 	
 	private static final String COMMAND_END_SIGN = ";";
 	
@@ -102,6 +103,7 @@ public class PiClockSerialConnection implements SerialMessageListener {
 		//no callback because the callback could come at any time and can't be queued
 		String message = COMMAND_SET_ALARM_SWITCH;
 		if (enabled) {
+			//not added to the queue but always listening
 			alarmSwitchCallbackRequest = new CallbackRequest(receiver, cause);
 			message += '1';
 		}
@@ -111,6 +113,19 @@ public class PiClockSerialConnection implements SerialMessageListener {
 		}
 		message += COMMAND_END_SIGN;
 		LOGGER.info("Sending alarm switch state change via serial connection (serial message: {})", message);
+		serialConnection.sendMessage(message);
+	}
+	
+	public void setSpeakerAmplifierEnabled(boolean enabled) {
+		String message = COMMAND_SET_SPEAKER_AMPLIFIER;
+		if (enabled) {
+			message += "1";
+		}
+		else {
+			message += "0";
+		}
+		message += COMMAND_END_SIGN;
+		LOGGER.info("Sending speaker amplifier state change via serial connection (serial message: {})", message);
 		serialConnection.sendMessage(message);
 	}
 	

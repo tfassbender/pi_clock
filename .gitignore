@@ -4,6 +4,7 @@
 bin/
 build/
 dist/
+log/
 
 .pi_clock_properties
 tracks/

@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import net.jfabricationgames.piClock.serial.PiClockSerialConnection;
+
 public class RPiAudioPlayer {
 	
 	private Logger LOGGER = LogManager.getLogger(RPiAudioPlayer.class);
@@ -43,6 +45,8 @@ public class RPiAudioPlayer {
 	private BufferedReader playerErr = null;
 	private BufferedWriter playerIn = null;
 	
+	private PiClockSerialConnection serialConnection;
+	
 	private static final String TRACK_PROPERTIES_DIR = ".pi_clock_properties";
 	private static final String TRACK_PROPERTIES_PATH = TRACK_PROPERTIES_DIR + "/tracks.properties";
 	private static final String TRACK_DIR_PROPERTY = "track_dir";
@@ -51,7 +55,11 @@ public class RPiAudioPlayer {
 	
 	private Thread nextTrackThread;//wait for the track to end and start the next one
 	
-	public RPiAudioPlayer() throws IOException, IllegalStateException {
+	public RPiAudioPlayer(PiClockSerialConnection serialConnection) throws IOException, IllegalStateException {
+		if (serialConnection == null) {
+			throw new IllegalArgumentException("The serial connection mussn't be null");
+		}
+		this.serialConnection = serialConnection;
 		trackProperties = new Properties();
 		try (InputStream inStream = new FileInputStream(new File(TRACK_PROPERTIES_PATH))) {
 			//load the properties from the file
@@ -181,6 +189,8 @@ public class RPiAudioPlayer {
 	
 	public void play() throws IOException {
 		LOGGER.info("Playing track");
+		//enable the speaker amplifier
+		serialConnection.setSpeakerAmplifierEnabled(true);
 		if (player == null) {
 			//create a new player and play a random track
 			createPlayer();
@@ -203,6 +213,8 @@ public class RPiAudioPlayer {
 	}
 	
 	public void pause() {
+		//disable the speaker amplifier
+		serialConnection.setSpeakerAmplifierEnabled(false);
 		LOGGER.info("Pausing player");
 		if (player != null) {
 			try {
@@ -219,6 +231,8 @@ public class RPiAudioPlayer {
 	
 	public void stop() throws IllegalStateException {
 		LOGGER.info("Stoping the player");
+		//disable the speaker amplifier
+		serialConnection.setSpeakerAmplifierEnabled(false);
 		if (player != null) {
 			try {
 				//interrupt the thread first to prevent it from restarting
