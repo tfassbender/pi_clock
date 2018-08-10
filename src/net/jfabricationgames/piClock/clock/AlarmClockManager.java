@@ -111,7 +111,6 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 				activateScreen();
 				controller.setAlarmSwitchEnabled(this, true, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
 				controller.setSpeakerAmplifierEnabled(true);
-				//controller.
 				return true;
 			}
 			catch (IOException ioe) {
