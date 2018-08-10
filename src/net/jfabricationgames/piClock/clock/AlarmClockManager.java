@@ -69,6 +69,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 			player.stop();
 			activeAlarm = null;
 			controller.setAlarmSwitchEnabled(this, false, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
+			controller.setSpeakerAmplifierEnabled(false);
 			return true;
 		}
 		else {
@@ -81,6 +82,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 		player.stop();
 		activeAlarm = null;
 		controller.setAlarmSwitchEnabled(this, false, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
+		controller.setSpeakerAmplifierEnabled(false);
 	}
 	
 	public void pauseAlarm(Alarm alarm, int seconds) {
@@ -108,6 +110,8 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 				activeAlarm = alarm;
 				activateScreen();
 				controller.setAlarmSwitchEnabled(this, true, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
+				controller.setSpeakerAmplifierEnabled(true);
+				//controller.
 				return true;
 			}
 			catch (IOException ioe) {

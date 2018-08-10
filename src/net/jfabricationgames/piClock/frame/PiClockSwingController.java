@@ -151,4 +151,12 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	public void setAlarmSwitchEnabled(SerialMessageReceiver receiver, boolean enabled, int cause) {
 		serialConnection.setAlarmSwitchEnabled(receiver, enabled, cause);
 	}
+	
+	/**
+	 * Enable or disable the power supply of the speaker amplifier using a relay 
+	 * @param enabled
+	 */
+	public void setSpeakerAmplifierEnabled(boolean enabled) {
+		serialConnection.setSpeakerAmplifierEnabled(enabled);
+	}
 }
