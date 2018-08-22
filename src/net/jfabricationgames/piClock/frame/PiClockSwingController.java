@@ -15,10 +15,10 @@ import net.jfabricationgames.piClock.clock.Alarm;
 import net.jfabricationgames.piClock.clock.AlarmClockManager;
 import net.jfabricationgames.piClock.clock.AlarmRepetition;
 import net.jfabricationgames.piClock.clock.ClockManager;
+import net.jfabricationgames.piClock.clock.DisplayBacklightManager;
 import net.jfabricationgames.piClock.clock.PiClockAlarm;
 import net.jfabricationgames.piClock.clock.TimeChangeListener;
 import net.jfabricationgames.piClock.serial.PiClockSerialConnection;
-import net.jfabricationgames.piClock.serial.SerialMessageReceiver;
 import net.jfabricationgames.piClock.temperature.TemperatureChangeListener;
 import net.jfabricationgames.piClock.temperature.TemperatureManager;
 
@@ -35,6 +35,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	private TemperatureManager temperatureManager;
 	private RPiAudioPlayer audioPlayer;
 	private AlarmClockManager alarmManager;
+	private DisplayBacklightManager displayManager;
 	
 	public PiClockSwingController(PiClockFrameSwing frame) {
 		this.frame = frame;
@@ -48,7 +49,9 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 		try {
 			audioPlayer = new RPiAudioPlayer(serialConnection);
 			alarmManager = new AlarmClockManager(clockManager, audioPlayer, this);
+			displayManager = new DisplayBacklightManager(serialConnection, alarmManager);
 			clockManager.addTimeChangeListener(alarmManager);
+			clockManager.addTimeChangeListener(displayManager);
 		}
 		catch (IOException ioe) {
 			LOGGER.error("Could not initialize audio player or alarm manager", ioe);
@@ -148,15 +151,22 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	/**
 	 * Enable or disable the microcontroller's alarm switch function.
 	 */
-	public void setAlarmSwitchEnabled(SerialMessageReceiver receiver, boolean enabled, int cause) {
+	/*public void setAlarmSwitchEnabled(SerialMessageReceiver receiver, boolean enabled, int cause) {
 		serialConnection.setAlarmSwitchEnabled(receiver, enabled, cause);
-	}
+	}*/
 	
 	/**
 	 * Enable or disable the power supply of the speaker amplifier using a relay 
-	 * @param enabled
 	 */
-	public void setSpeakerAmplifierEnabled(boolean enabled) {
+	/*public void setSpeakerAmplifierEnabled(boolean enabled) {
 		serialConnection.setSpeakerAmplifierEnabled(enabled);
+	}*/
+	
+	public PiClockSerialConnection getPiClockSerialConnection() {
+		return serialConnection;
+	}
+	
+	public DisplayBacklightManager getDisplayManager() {
+		return displayManager;
 	}
 }

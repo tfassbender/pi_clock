@@ -36,6 +36,7 @@ import net.jfabricationgames.piClock.audio.RPiAudioPlayer;
 import net.jfabricationgames.piClock.clock.Alarm;
 import net.jfabricationgames.piClock.clock.AlarmRepetition;
 import net.miginfocom.swing.MigLayout;
+import java.awt.event.MouseMotionAdapter;
 
 public class PiClockFrameSwing extends JFrame {
 
@@ -86,10 +87,17 @@ public class PiClockFrameSwing extends JFrame {
 				controller.storeAlarms();
 			}
 		});
+		addMouseMotionListener(new MouseMotionAdapter() {
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				controller.getDisplayManager().reset();
+			}
+		});
 		
 		setTitle("PiClock");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 600, 450);
+		setExtendedState(MAXIMIZED_BOTH);
 		contentPane = new JPanel();
 		contentPane.setBackground(Color.GRAY);
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));

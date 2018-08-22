@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 
 import net.jfabricationgames.piClock.audio.RPiAudioPlayer;
 import net.jfabricationgames.piClock.frame.PiClockSwingController;
+import net.jfabricationgames.piClock.serial.PiClockSerialConnection;
 import net.jfabricationgames.piClock.serial.SerialMessageReceiver;
 
 public class AlarmClockManager implements TimeChangeListener, SerialMessageReceiver {
@@ -62,14 +63,18 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 	public boolean isAlarmPlaying(Alarm alarm) {
 		return activeAlarm != null && activeAlarm.equals(alarm);
 	}
+	public boolean isAnyAlarmPlaying() {
+		return activeAlarm != null;
+	}
 	
 	public boolean stopAlarm(Alarm alarm) {
 		LOGGER.info("Stopping alarm ({})", alarm);
 		if (activeAlarm != null && activeAlarm.equals(alarm)) {
 			player.stop();
 			activeAlarm = null;
-			controller.setAlarmSwitchEnabled(this, false, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
-			controller.setSpeakerAmplifierEnabled(false);
+			PiClockSerialConnection connection = controller.getPiClockSerialConnection();
+			connection.setAlarmSwitchEnabled(this, false, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
+			connection.setSpeakerAmplifierEnabled(false);
 			return true;
 		}
 		else {
@@ -81,8 +86,9 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 		//stop any alarm that could be playing at the moment
 		player.stop();
 		activeAlarm = null;
-		controller.setAlarmSwitchEnabled(this, false, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
-		controller.setSpeakerAmplifierEnabled(false);
+		PiClockSerialConnection connection = controller.getPiClockSerialConnection();
+		connection.setAlarmSwitchEnabled(this, false, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
+		connection.setSpeakerAmplifierEnabled(false);
 	}
 	
 	public void pauseAlarm(Alarm alarm, int seconds) {
@@ -109,8 +115,12 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 				player.play();
 				activeAlarm = alarm;
 				activateScreen();
-				controller.setAlarmSwitchEnabled(this, true, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
-				controller.setSpeakerAmplifierEnabled(true);
+				PiClockSerialConnection connection = controller.getPiClockSerialConnection();
+				connection.setAlarmSwitchEnabled(this, true, RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH);
+				connection.setSpeakerAmplifierEnabled(true);
+				connection.setDisplayBacklightEnabled(true);
+				//reset the time till the display backlight is turned off again
+				controller.getDisplayManager().reset();
 				return true;
 			}
 			catch (IOException ioe) {
@@ -188,6 +198,9 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 		}
 	}
 	
+	/**
+	 * Deactivate the screen saver by moving the mouse (does NOT activate the display backlight)
+	 */
 	private void activateScreen() {
 		//wake up the screen by moving the cursor
 		try {
