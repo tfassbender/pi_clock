@@ -51,7 +51,7 @@ public class RPiAudioPlayer {
 	private static final String TRACK_PROPERTIES_PATH = TRACK_PROPERTIES_DIR + "/tracks.properties";
 	private static final String TRACK_DIR_PROPERTY = "track_dir";
 	private static final String DEFAULT_TRACK_DIR = "tracks";
-	private static final String PLAYER_COMMAND = "omxplayer -o local --vol -2750 ";
+	private static final String PLAYER_COMMAND = "omxplayer -o local --vol -0 ";//--vol -2750
 	
 	private Thread nextTrackThread;//wait for the track to end and start the next one
 	
