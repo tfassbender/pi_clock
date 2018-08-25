@@ -12,6 +12,12 @@ import javafx.scene.control.Label;
 import net.jfabricationgames.piClock.clock.TimeChangeListener;
 import net.jfabricationgames.piClock.temperature.TemperatureChangeListener;
 
+/**
+ * The JavaFX controller for the frame class {@code PiClockFrame} for the pi clock project.
+ * 
+ * This class is deprecated because it doesn't work on the RaspberryPi because the JavaFX library is not available on RaspberryPi.
+ */
+@Deprecated
 public class PiClockController implements Initializable, TimeChangeListener, TemperatureChangeListener {
 	
 	@FXML

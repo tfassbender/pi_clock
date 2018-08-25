@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -36,11 +37,12 @@ import net.jfabricationgames.piClock.audio.RPiAudioPlayer;
 import net.jfabricationgames.piClock.clock.Alarm;
 import net.jfabricationgames.piClock.clock.AlarmRepetition;
 import net.miginfocom.swing.MigLayout;
-import java.awt.event.MouseMotionAdapter;
 
 public class PiClockFrameSwing extends JFrame {
 
 	private static final long serialVersionUID = -1567530055356287961L;
+	
+	//private Logger LOGGER = LogManager.getLogger(DisplayBacklightManager.class);
 	
 	private JPanel contentPane;
 	private JLabel lblTime_1;
@@ -91,6 +93,7 @@ public class PiClockFrameSwing extends JFrame {
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				controller.getDisplayManager().reset();
+				controller.getPiClockSerialConnection().setDisplayBacklightEnabled(true);
 			}
 		});
 		

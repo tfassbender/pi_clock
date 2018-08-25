@@ -11,6 +11,12 @@ import net.jfabricationgames.piClock.clock.ClockManager;
 import net.jfabricationgames.piClock.serial.PiClockSerialConnection;
 import net.jfabricationgames.piClock.temperature.TemperatureManager;
 
+/**
+ * The JavaFX frame for the pi clock project.
+ * 
+ * This class is deprecated because it doesn't work on the RaspberryPi because the JavaFX library is not available on RaspberryPi.
+ */
+@Deprecated
 public class PiClockFrame extends Application {
 	
 	public static void main(String[] args) {
