@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -120,6 +121,11 @@ public class RPiAudioPlayer {
 	}
 	
 	public void createPlayer() throws IOException {
+		int randomTrackNumber = (int) (Math.random() * tracks.size());
+		File playedTrack = tracks.get(randomTrackNumber);
+		createPlayer(playedTrack);
+	}
+	private void createPlayer(File playedTrack) throws IOException {
 		LOGGER.info("Creating player");
 		if (player != null) {
 			player.destroy();
@@ -132,8 +138,6 @@ public class RPiAudioPlayer {
 				LOGGER.warn("Problems while closing the last players streams", ioe);
 			}
 		}
-		int randomTrackNumber = (int) (Math.random() * tracks.size());
-		File playedTrack = tracks.get(randomTrackNumber);
 		String playerCommand = PLAYER_COMMAND + playedTrack.getAbsolutePath();
 		LOGGER.info("Starting player (command: {})", playerCommand);
 		player = Runtime.getRuntime().exec(playerCommand);
@@ -189,6 +193,32 @@ public class RPiAudioPlayer {
 		nextTrackThread.start();
 	}
 	
+	/**
+	 * Play a file and stop all other players that may play at the moment (or resume a paused track).
+	 */
+	public void play(File file) throws IOException {
+		LOGGER.info("Playing specified track: {}", file);
+		//enable the speaker amplifier
+		serialConnection.setSpeakerAmplifierEnabled(true);
+		if (player != null && player.isAlive()) {
+			if (trackPaused) {
+				//if the track is paused, start it again
+				playerIn.write("p");
+				playerIn.flush();
+				trackPaused = false;
+			}
+			else {
+				stop();
+				createPlayer(file);
+			}
+		}
+		else {
+			createPlayer(file);			
+		}
+	}
+	/**
+	 * Play any file (if there is none playing at the moment).
+	 */
 	public void play() throws IOException {
 		LOGGER.info("Playing track");
 		//enable the speaker amplifier
@@ -337,5 +367,9 @@ public class RPiAudioPlayer {
 				ioe.printStackTrace();
 			}
 		}
+	}
+	
+	public List<File> getTrackList() {
+		return new ArrayList<File>(tracks);
 	}
 }

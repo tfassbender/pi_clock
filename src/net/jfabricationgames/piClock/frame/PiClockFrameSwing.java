@@ -11,6 +11,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
@@ -33,16 +36,20 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.jfabricationgames.piClock.audio.RPiAudioPlayer;
 import net.jfabricationgames.piClock.clock.Alarm;
 import net.jfabricationgames.piClock.clock.AlarmRepetition;
+import net.jfabricationgames.piClock.clock.DisplayBacklightManager;
 import net.miginfocom.swing.MigLayout;
 
 public class PiClockFrameSwing extends JFrame {
 
 	private static final long serialVersionUID = -1567530055356287961L;
 	
-	//private Logger LOGGER = LogManager.getLogger(DisplayBacklightManager.class);
+	private Logger LOGGER = LogManager.getLogger(DisplayBacklightManager.class);
 	
 	private JPanel contentPane;
 	private JLabel lblTime_1;
@@ -64,6 +71,8 @@ public class PiClockFrameSwing extends JFrame {
 	private JLabel lblNextAlarmTime;
 	private JSlider slider;
 	private JSpinner spinner;
+	private JList<Track> trackList;
+	private DefaultListModel<Track> trackListModel;
 	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -390,21 +399,45 @@ public class PiClockFrameSwing extends JFrame {
 		JScrollPane scrollPane_1 = new JScrollPane();
 		panelPlayer.add(scrollPane_1, "cell 3 4 7 6,grow");
 		
-		JList<String> list = new JList<String>();
-		list.setBackground(Color.LIGHT_GRAY);
-		list.setFont(new Font("Tahoma", Font.BOLD, 18));
-		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		scrollPane_1.setViewportView(list);
+		trackListModel = new DefaultListModel<Track>();
+		trackList = new JList<Track>(trackListModel);
+		trackList.setBackground(Color.LIGHT_GRAY);
+		trackList.setFont(new Font("Tahoma", Font.BOLD, 18));
+		trackList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		scrollPane_1.setViewportView(trackList);
 		
 		JButton btnPlay = new JButton("Play");
+		btnPlay.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Track track = trackList.getSelectedValue();
+				if (track != null) {
+					try {
+						controller.getAudioPlayer().play(track.getTrackFile());
+					}
+					catch (IOException ioe) {
+						LOGGER.error("Error while trying to play a track", ioe);
+					}
+				}
+			}
+		});
 		btnPlay.setFont(new Font("Tahoma", Font.BOLD, 25));
 		panelPlayer.add(btnPlay, "cell 1 6,growx");
 		
 		JButton btnPause = new JButton("Pause");
+		btnPause.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				controller.getAudioPlayer().pause();
+			}
+		});
 		btnPause.setFont(new Font("Tahoma", Font.BOLD, 25));
 		panelPlayer.add(btnPause, "cell 1 7,growx");
 		
 		JButton btnStop = new JButton("Stop");
+		btnStop.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				controller.getAudioPlayer().stop();
+			}
+		});
 		btnStop.setFont(new Font("Tahoma", Font.BOLD, 25));
 		panelPlayer.add(btnStop, "cell 1 8,growx");
 	}
@@ -569,6 +602,14 @@ public class PiClockFrameSwing extends JFrame {
 				sb.append(minutes);
 				lblNextAlarmTime.setText(sb.toString());
 			}			
+		}
+	}
+	
+	public void updateTrackList(List<File> tracks) {
+		trackListModel.clear();
+		for (File trackFile : tracks) {
+			Track track = new Track(trackFile);
+			trackListModel.addElement(track);			
 		}
 	}
 	

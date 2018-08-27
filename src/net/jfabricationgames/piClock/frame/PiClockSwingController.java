@@ -59,6 +59,8 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 		}
 		clockManager.addTimeChangeListener(this);
 		temperatureManager.addTimeChangeListener(this);
+		
+		frame.updateTrackList(audioPlayer.getTrackList());
 	}
 	
 	@Override
@@ -168,5 +170,9 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	
 	public DisplayBacklightManager getDisplayManager() {
 		return displayManager;
+	}
+	
+	public RPiAudioPlayer getAudioPlayer() {
+		return audioPlayer;
 	}
 }
