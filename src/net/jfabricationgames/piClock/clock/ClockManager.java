@@ -61,7 +61,7 @@ public class ClockManager implements Runnable {
 	}
 	
 	private void updateClock(LocalDateTime time) {
-		LOGGER.info("Sending clock update via serial connection");
+		LOGGER.trace("Sending clock update via serial connection");
 		piClockConnection.sendTime(time.getHour(), time.getMinute());
 	}
 	private void informListeners(LocalDateTime time) {

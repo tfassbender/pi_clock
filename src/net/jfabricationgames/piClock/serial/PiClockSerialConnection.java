@@ -80,7 +80,7 @@ public class PiClockSerialConnection implements SerialMessageListener {
 		clockText += minute;
 		clockText += COMMAND_END_SIGN;
 		//send the new time to via the serial port
-		LOGGER.info("Sending time via serial connection (serial message: {})", clockText);
+		LOGGER.trace("Sending time via serial connection (serial message: {})", clockText);
 		serialConnection.sendMessage(clockText);
 	}
 	
@@ -88,7 +88,7 @@ public class PiClockSerialConnection implements SerialMessageListener {
 		lastReceivedMessage = null;
 		callbackRequests.offer(new CallbackRequest(callback, cause));
 		String message = COMMAND_GET_TEMPERATURE + COMMAND_END_SIGN;
-		LOGGER.info("Sending temperatue request via serial connection (serial message: {})", message);
+		LOGGER.trace("Sending temperatue request via serial connection (serial message: {})", message);
 		serialConnection.sendMessage(message);
 	}
 	
@@ -96,7 +96,7 @@ public class PiClockSerialConnection implements SerialMessageListener {
 		lastReceivedMessage = null;
 		callbackRequests.offer(new CallbackRequest(callback, cause));
 		String message = COMMAND_GET_HUMIDITY + COMMAND_END_SIGN;
-		LOGGER.info("Sending humidity request via serial connection (serial message: {})", message);
+		LOGGER.trace("Sending humidity request via serial connection (serial message: {})", message);
 		serialConnection.sendMessage(message);
 	}
 	
