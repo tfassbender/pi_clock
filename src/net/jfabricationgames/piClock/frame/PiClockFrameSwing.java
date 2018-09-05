@@ -72,7 +72,7 @@ public class PiClockFrameSwing extends JFrame {
 	private JSlider slider;
 	private JSpinner spinner;
 	private JList<Track> trackList;
-	private DefaultListModel<Track> trackListModel;
+	private DefaultListModel<Track> trackListModel = new DefaultListModel<Track>();
 	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -399,7 +399,6 @@ public class PiClockFrameSwing extends JFrame {
 		JScrollPane scrollPane_1 = new JScrollPane();
 		panelPlayer.add(scrollPane_1, "cell 3 4 7 6,grow");
 		
-		trackListModel = new DefaultListModel<Track>();
 		trackList = new JList<Track>(trackListModel);
 		trackList.setBackground(Color.LIGHT_GRAY);
 		trackList.setFont(new Font("Tahoma", Font.BOLD, 18));
