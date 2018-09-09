@@ -1,7 +1,9 @@
 package net.jfabricationgames.piClock.clock;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Manage the loading, storing, ... of alarms using an {@code AlarmSupplier}.
@@ -10,18 +12,18 @@ public class AlarmManager implements AlarmChangeListener {
 	
 	private AlarmSupplier alarmSupplier;
 	
-	private List<Alarm> alarms;
+	private Map<Integer, Alarm> alarms;
 	
 	public AlarmManager(AlarmSupplier supplier) {
 		this.alarmSupplier = supplier;
-		this.alarms = new ArrayList<Alarm>();
+		this.alarms = new HashMap<Integer, Alarm>();
 	}
 	
 	/**
 	 * Returns a copy of the current alarm list (no deep copy)
 	 */
 	public List<Alarm> getAlarms() {
-		return new ArrayList<Alarm>(alarms);
+		return new ArrayList<Alarm>(alarms.values());
 	}
 	
 	/**
@@ -29,7 +31,7 @@ public class AlarmManager implements AlarmChangeListener {
 	 */
 	public void addAlarm(Alarm alarm) {
 		alarmSupplier.addAlarm(alarm);
-		alarms.add(alarm);
+		alarms.put(alarm.getId(), alarm);
 	}
 	
 	/**
@@ -37,7 +39,7 @@ public class AlarmManager implements AlarmChangeListener {
 	 */
 	public void removeAlarm(Alarm alarm) {
 		alarmSupplier.removeAlarm(alarm);
-		alarms.remove(alarm);
+		alarms.remove(alarm.getId());
 	}
 	
 	/**
@@ -52,7 +54,7 @@ public class AlarmManager implements AlarmChangeListener {
 	 */
 	@Override
 	public void addAlarmRemote(Alarm alarm) {
-		alarms.add(alarm);
+		alarms.put(alarm.getId(), alarm);
 	}
 	
 	/**
@@ -60,6 +62,6 @@ public class AlarmManager implements AlarmChangeListener {
 	 */
 	@Override
 	public void removeAlarmRemote(Alarm alarm) {
-		alarms.remove(alarm);
+		alarms.remove(alarm.getId());
 	}
 }

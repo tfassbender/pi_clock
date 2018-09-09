@@ -20,4 +20,6 @@ public interface Alarm extends TimeChangeListener, Serializable, Comparable<Alar
 	public void pause(int seconds);
 	
 	public boolean isPaused();
+	
+	public int getId();
 }

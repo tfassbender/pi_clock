@@ -14,6 +14,8 @@ public class PiClockAlarm implements Alarm {
 	
 	private static final long serialVersionUID = -1312956845922157557L;
 	
+	private int id;
+	
 	private AlarmRepetition repetition;
 	private LocalDateTime alarmDateTime;
 	private boolean active;
@@ -30,6 +32,7 @@ public class PiClockAlarm implements Alarm {
 		this.manager = manager;
 		this.active = active;
 		this.repetition = repetition;
+		this.id = hashCode();
 	}
 	
 	@Override
@@ -179,5 +182,10 @@ public class PiClockAlarm implements Alarm {
 				return 1;
 			}
 		}
+	}
+	
+	@Override
+	public int getId() {
+		return id;
 	}
 }
