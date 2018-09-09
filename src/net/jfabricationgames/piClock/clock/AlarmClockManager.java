@@ -2,15 +2,9 @@ package net.jfabricationgames.piClock.clock;
 
 import java.awt.AWTException;
 import java.awt.Robot;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -27,12 +21,13 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 	
 	private Logger LOGGER = LogManager.getLogger(AlarmClockManager.class);
 	
-	private static final String PROPERTIES_DIR = ".pi_clock_properties";
-	private static final String ALARM_FILE = "alarms";
+	//private static final String PROPERTIES_DIR = ".pi_clock_properties";
+	//private static final String ALARM_FILE = "alarms";
 	
 	private static final int RECEIVE_MESSAGE_CAUSE_ALARM_SWITCH = 3;
 	
-	private List<Alarm> alarms;
+	//private List<Alarm> alarms;
+	private AlarmManager alarmManager;
 	private ClockManager clockManager;
 	private RPiAudioPlayer player;
 	private Alarm activeAlarm;
@@ -45,18 +40,21 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 		this.clockManager = clockManager;
 		this.player = player;
 		this.controller = controller;
-		alarms = new ArrayList<Alarm>();
-		loadAlarms();
+		//alarms = new ArrayList<Alarm>();
+		//loadAlarms();
+		AlarmSupplier dbSupplier = new DatabaseAlarmStore();
+		alarmManager = new AlarmManager(dbSupplier);
+		dbSupplier.addAlarmChangeListener(alarmManager);
 	}
 	
 	public void addAlarm(Alarm alarm) {
 		LOGGER.info("Adding alarm: {}", alarm);
-		alarms.add(alarm);
+		alarmManager.addAlarm(alarm);
 		clockManager.addTimeChangeListener(alarm);
 	}
 	public void removeAlarm(Alarm alarm) {
 		LOGGER.info("Removing alarm: {}", alarm);
-		alarms.remove(alarm);
+		alarmManager.removeAlarm(alarm);
 		clockManager.removeTimeChangeListener(alarm);
 	}
 	
@@ -135,6 +133,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 	}
 	
 	public void updateNextAlarm() {
+		List<Alarm> alarms = alarmManager.getAlarms();
 		Collections.sort(alarms);
 		if (!alarms.isEmpty() && alarms.get(0).isActive()) {
 			LocalDateTime nextAlarmTime = alarms.get(0).getDateTime();
@@ -156,7 +155,10 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 	}
 	
 	public void storeAlarms() {
-		LOGGER.info("Storing alarms to file");
+		//just pass it on to the manager since the alarms are no longer handled here
+		alarmManager.storeAlarms();
+		
+		/*LOGGER.info("Storing alarms to file");
 		try (ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(new File(PROPERTIES_DIR + "/" + ALARM_FILE)))) {
 			//write the number of alarms and the alarm objects to the file
 			writer.writeInt(alarms.size());
@@ -168,9 +170,9 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 			LOGGER.error("Could not store alarms to file", ioe);
 			System.err.println("Couldn't store the alarms.");
 			ioe.printStackTrace();
-		}
+		}*/
 	}
-	public void loadAlarms() {
+	/*private void loadAlarms() {
 		LOGGER.info("Loading alarms from file");
 		try (ObjectInputStream reader = new ObjectInputStream(new FileInputStream(new File(PROPERTIES_DIR + "/" + ALARM_FILE)))) {
 			//read the number of alarm objects
@@ -196,7 +198,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 			System.err.println("Couldn't load the alarms from file");
 			e.printStackTrace();
 		}
-	}
+	}*/
 	
 	/**
 	 * Deactivate the screen saver by moving the mouse (does NOT activate the display backlight)
@@ -217,7 +219,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 	}
 	
 	public List<Alarm> getAlarms() {
-		return alarms;
+		return alarmManager.getAlarms();
 	}
 
 	@Override
