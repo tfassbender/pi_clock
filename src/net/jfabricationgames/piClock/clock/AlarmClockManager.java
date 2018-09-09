@@ -44,7 +44,6 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 		//loadAlarms();
 		AlarmSupplier dbSupplier = new DatabaseAlarmStore();
 		alarmManager = new AlarmManager(dbSupplier);
-		dbSupplier.addAlarmChangeListener(alarmManager);
 	}
 	
 	public void addAlarm(Alarm alarm) {
