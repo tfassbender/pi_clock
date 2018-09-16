@@ -8,6 +8,7 @@ package net.jfabricationgames.piClock.server;
 public class PiClockAlarmServerMain {
 	
 	public static void main(String[] args) {
-		//TODO
+		//just create a new server
+		new PiClockAlarmServer();
 	}
 }

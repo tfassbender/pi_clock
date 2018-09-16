@@ -6,5 +6,5 @@ package net.jfabricationgames.piClock.server;
 @FunctionalInterface
 public interface PiClockServerInterpreter {
 	
-	public void interpreteMessage(AlarmMessage message);
+	public void interpreteMessage(AlarmMessage message, PiClockConnection connection);
 }

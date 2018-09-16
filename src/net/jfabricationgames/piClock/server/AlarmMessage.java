@@ -10,7 +10,8 @@ public interface AlarmMessage {
 		ADD,		//new alarm via push
 		REMOVE,		//remove alarm via push
 		SET_ACTIVE,	//set alarm active state via push
-		LOAD_ALL;	//require (client) or send (server) all alarms
+		LOAD_ALL,	//require (client) or send (server) all alarms
+		ACK;		//send an acknowledge message back to the client (including an id)
 	}
 	
 	public Type getType();
