@@ -92,13 +92,13 @@ public class AlarmManager implements AlarmChangeListener {
 	 * Informs the {@code AlarmChangeListener} that an {@code Alarm} was removed by a remote source
 	 */
 	@Override
-	public void removeAlarmRemote(Alarm alarm) {
-		Alarm removed = alarms.remove(alarm.getId());
+	public void removeAlarmRemote(int id) {
+		Alarm removed = alarms.remove(id);
 		if (removed != null) {
 			LOGGER.debug("Removed alarm from list (remove command by remote); alarm: {}", removed);
 		}
 		else {
-			LOGGER.warn("The alarm that should be removed was not found (id: {} alarm: {})", alarm.getId(), alarm);
+			LOGGER.warn("The alarm that should be removed was not found (id: {})", id);
 		}
 	}
 	

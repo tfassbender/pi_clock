@@ -71,11 +71,11 @@ public class DatabaseAlarmStore implements AlarmSupplier {
 	 * Remove an {@code Alarm} from a remote source (the database server) and inform the listeners
 	 */
 	@Override
-	public void removeAlarmRemote(Alarm alarm) {
-		LOGGER.info("Received alarm delete command by remote source; informing all listeners (alarm: {} #listeners: {})", alarm,
+	public void removeAlarmRemote(int id) {
+		LOGGER.info("Received alarm delete command by remote source; informing all listeners (id: {} #listeners: {})", id,
 				alarmChangeListeners.size());
 		for (AlarmChangeListener alarmListener : alarmChangeListeners) {
-			alarmListener.removeAlarmRemote(alarm);
+			alarmListener.removeAlarmRemote(id);
 		}
 	}
 	

@@ -12,7 +12,7 @@ public interface AlarmSupplier {
 	public void setAlarmActive(int id, boolean active);
 	
 	public void addAlarmRemote(Alarm alarm);
-	public void removeAlarmRemote(Alarm alarm);
+	public void removeAlarmRemote(int id);
 	public void setAlarmActiveRemote(int id, boolean active);
 	
 	public void addAlarmChangeListener(AlarmChangeListener listener);
