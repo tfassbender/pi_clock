@@ -58,7 +58,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 			ioe.printStackTrace();
 		}
 		clockManager.addTimeChangeListener(this);
-		temperatureManager.addTimeChangeListener(this);
+		temperatureManager.addTemperatureChangeListener(this);
 		
 		frame.updateTrackList(audioPlayer.getTrackList());
 	}
