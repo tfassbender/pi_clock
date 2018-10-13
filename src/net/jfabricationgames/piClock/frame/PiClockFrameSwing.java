@@ -152,10 +152,10 @@ public class PiClockFrameSwing extends JFrame {
 		
 		JPanel panelAlarm = new JPanel();
 		tabbedPane.addTab("Alarm", null, panelAlarm, null);
-		panelAlarm.setLayout(new MigLayout("", "[50px][50px][30px][30px][10px][][100px,grow][100px]", "[][grow][][center][center][][10px][][10px][]"));
+		panelAlarm.setLayout(new MigLayout("", "[50px][50px][30px][30px][10px][][100px,grow][100px]", "[][40px,grow][][center][center][][5px,grow][20px][10px][5px][]"));
 		
 		JLabel lblAlarms = new JLabel("Alarms:");
-		lblAlarms.setFont(new Font("Tahoma", Font.BOLD, 18));
+		lblAlarms.setFont(new Font("Tahoma", Font.BOLD, 22));
 		panelAlarm.add(lblAlarms, "cell 5 0 2 1");
 		
 		JButton btnPauseAlarm = new JButton("Pause Alarm");
@@ -177,11 +177,11 @@ public class PiClockFrameSwing extends JFrame {
 				}
 			}
 		});
-		chckbxAlarmActive.setFont(new Font("Tahoma", Font.BOLD, 16));
+		chckbxAlarmActive.setFont(new Font("Tahoma", Font.BOLD, 22));
 		panelAlarm.add(chckbxAlarmActive, "cell 7 0,alignx right");
 		
 		JScrollPane scrollPane = new JScrollPane();
-		panelAlarm.add(scrollPane, "cell 5 1 3 4,grow");
+		panelAlarm.add(scrollPane, "cell 5 1 3 6,grow");
 		
 		alarmListModel = new DefaultListModel<Alarm>();
 		listAlarms = new JList<Alarm>(alarmListModel);
@@ -193,11 +193,11 @@ public class PiClockFrameSwing extends JFrame {
 		});
 		listAlarms.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		listAlarms.setBackground(Color.LIGHT_GRAY);
-		listAlarms.setFont(new Font("Tahoma", Font.BOLD, 18));
+		listAlarms.setFont(new Font("Tahoma", Font.BOLD, 22));
 		scrollPane.setViewportView(listAlarms);
 		
 		JLabel lblNewAlarm = new JLabel("New Alarm:");
-		lblNewAlarm.setFont(new Font("Tahoma", Font.BOLD, 18));
+		lblNewAlarm.setFont(new Font("Tahoma", Font.BOLD, 22));
 		panelAlarm.add(lblNewAlarm, "cell 0 2 4 1");
 		
 		JLabel lblHour = new JLabel("Hour:");
@@ -273,15 +273,6 @@ public class PiClockFrameSwing extends JFrame {
 		btn_decrease_minute.setFont(new Font("Tahoma", Font.BOLD, 30));
 		panelAlarm.add(btn_decrease_minute, "cell 3 4");
 		
-		JLabel lblNextAlarmIn = new JLabel("Next Alarm in:");
-		lblNextAlarmIn.setFont(new Font("Tahoma", Font.BOLD, 16));
-		panelAlarm.add(lblNextAlarmIn, "cell 5 5,aligny center");
-		
-		lblNextAlarmTime = new JLabel("");
-		lblNextAlarmTime.setForeground(Color.RED);
-		lblNextAlarmTime.setFont(new Font("Tahoma", Font.BOLD, 30));
-		panelAlarm.add(lblNextAlarmTime, "cell 6 5 2 1,alignx center,aligny center");
-		
 		JButton btnAlarmOff = new JButton("Alarm Off");
 		btnAlarmOff.setForeground(Color.RED);
 		btnAlarmOff.addActionListener(new ActionListener() {
@@ -289,8 +280,17 @@ public class PiClockFrameSwing extends JFrame {
 				controller.stopAlarm();
 			}
 		});
+		
+		JLabel lblNextAlarmIn = new JLabel("Next Alarm in:");
+		lblNextAlarmIn.setFont(new Font("Tahoma", Font.BOLD, 16));
+		panelAlarm.add(lblNextAlarmIn, "cell 5 7,aligny center");
+		
+		lblNextAlarmTime = new JLabel("");
+		lblNextAlarmTime.setForeground(Color.RED);
+		lblNextAlarmTime.setFont(new Font("Tahoma", Font.BOLD, 30));
+		panelAlarm.add(lblNextAlarmTime, "cell 6 7 2 1,alignx center,aligny center");
 		btnAlarmOff.setFont(new Font("Tahoma", Font.BOLD, 40));
-		panelAlarm.add(btnAlarmOff, "cell 5 7 3 3,alignx center");
+		panelAlarm.add(btnAlarmOff, "cell 5 8 3 3,alignx center");
 		
 		JLabel lblMinute = new JLabel("Minute:");
 		lblMinute.setFont(new Font("Tahoma", Font.BOLD, 16));
@@ -323,7 +323,7 @@ public class PiClockFrameSwing extends JFrame {
 			}
 		});
 		btnAddAlarm.setFont(new Font("Tahoma", Font.BOLD, 25));
-		panelAlarm.add(btnAddAlarm, "cell 0 7 4 1,alignx center,aligny top");
+		panelAlarm.add(btnAddAlarm, "cell 0 7 4 2,alignx center,aligny top");
 		
 		JButton btnRemoveAlarm = new JButton("Remove Alarm");
 		btnRemoveAlarm.addActionListener(new ActionListener() {
@@ -336,7 +336,7 @@ public class PiClockFrameSwing extends JFrame {
 			}
 		});
 		btnRemoveAlarm.setFont(new Font("Tahoma", Font.BOLD, 25));
-		panelAlarm.add(btnRemoveAlarm, "cell 0 9 4 1,alignx center");
+		panelAlarm.add(btnRemoveAlarm, "cell 0 10 4 1,alignx center");
 		
 		JPanel panelPlayer = new JPanel();
 		tabbedPane.addTab("Player", null, panelPlayer, null);
