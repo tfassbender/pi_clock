@@ -30,7 +30,7 @@ public class PiClockFrame extends Application {
 		TemperatureManager temperatureManager = new TemperatureManager(serialConnection);
 		PiClockController controller = new PiClockController();
 		clockManager.addTimeChangeListener(controller);
-		temperatureManager.addTimeChangeListener(controller);
+		temperatureManager.addTemperatureChangeListener(controller);
 		
 		URL piClockFrameUrl = getClass().getResource("PiClockFrame.fxml");
 		FXMLLoader loader = new FXMLLoader(piClockFrameUrl);

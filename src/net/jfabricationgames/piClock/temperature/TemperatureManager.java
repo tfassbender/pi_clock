@@ -95,10 +95,10 @@ public class TemperatureManager implements Runnable, SerialMessageReceiver {
 		}
 	}
 	
-	public void addTimeChangeListener(TemperatureChangeListener listener) {
+	public void addTemperatureChangeListener(TemperatureChangeListener listener) {
 		temperatureChangeListeners.add(listener);
 	}
-	public boolean removeTimeChangeListener(TemperatureChangeListener listener) {
+	public boolean removeTemperatureChangeListener(TemperatureChangeListener listener) {
 		return temperatureChangeListeners.remove(listener);
 	}
 
