@@ -1,0 +1,46 @@
+1. raspian installieren (trivial)
+
+2. LCD treiber installieren
+	
+	cd
+	git clone https://github.com/goodtft/LCD-show.git
+	chmod -R 755 LCD-show
+	cd LCD-show/
+	sudo ./LCD5-show
+	
+3. rxtx installieren
+	
+	sudo apt-get install librxtx-java
+	
+4. aktuelle version von PiClock hochladen
+
+5. startskript erstellen
+
+	cd ~/Desktop
+	touch start_pi_clock.sh
+	nano start_pi_clock.sh
+	
+	#!/bin/bash
+	java -jar -Djava.library.path=/usr/lib/jni <the_application_name>
+	
+6. mp3 files hochladen und anpassen
+	
+	cd
+	mkdir mp3
+	
+	files hochladen nach ~/mp3/
+	files umbenennen um spaces zu eliminieren
+		
+		cd ~/mp3
+		for f in *\ *; do mv "$f" "${f// /_}"; done
+		
+7. programm starten (funktioniert noch nicht aber legt properties dateien an)
+
+8. properties files anpassen
+	
+	cd ~/Desktop/.pi_clock_properties/
+	nano tracks.properties
+	
+		track_dir=/home/pi/mp3
+	
+9. programm starten (fehlermeldungen wegen keiner gefundenen alarme kann ignoriert werden (alerme erstellen, dann passiert das nicht mehr))
