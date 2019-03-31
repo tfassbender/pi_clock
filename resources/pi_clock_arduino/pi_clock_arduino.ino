@@ -1,9 +1,10 @@
 #include <Arduino.h>
 #include <TM1637Display.h>
+#include <RCSwitch.h>
 
 // Module connection pins (Digital Pins)
 #define CLK 3
-#define DIO 2
+#define DIO 9//changed from 2 to 9 because PIN 2 is an interrupt pin (needed for the rc-switch)
 
 // connection pins for infra red receiver and target led 
 #define LED 4
@@ -19,6 +20,23 @@
 // analog pin for reading the photoresistor values
 #define PHOTO_RESISTOR 0
 
+// connection pins and settings for the 433MHz RC-Switch
+RCSwitch rcSwitch = RCSwitch();
+
+#define SEND_CODE_SET_ALARM 42//+ set time
+#define SEND_CODE_SHOW_NEXT 33
+#define SEND_CODE_DELETE_ALL 31
+#define SEND_BITS 16
+#define PIN_DATA 0//interrupt 0 (PIN 3 on Pro Micro; PIN 2 on Nano)
+
+//the message codes to send to the alarm clock for remote alarms (need pattern recognition because no callback can be used)
+#define REMOTE_ALARM_CODE_SET_ALARM "REMOTE_ALARM_SET "//+ alarm time as string
+#define REMOTE_ALARM_CODE_SHOW_NEXT_ALARM "REMOTE_ALARM_SHOW"
+#define REMOTE_ALARM_CODE_DELETE_ALL "REMOTE_ALARM_DELETE_ALL"
+
+unsigned long fiveSecondsDisplayStartTime;
+
+// display settings and codes
 TM1637Display display(CLK, DIO);
 
 uint8_t digit_0 = 0x3f;
@@ -35,7 +53,13 @@ uint8_t digit_9 = 0x6f;
 uint8_t points = 0x40;
 uint8_t no_points = 0x80;
 
-uint8_t clearDisplay[] = {0x00, 0x00, 0x00, 0x00};
+const uint8_t clearDisplay[] = {0x00, 0x00, 0x00, 0x00};
+const uint8_t SEG_NONE[] = {
+  SEG_C | SEG_E | SEG_G,                           // n
+  SEG_C | SEG_D | SEG_E | SEG_G,                   // o
+  SEG_C | SEG_E | SEG_G,                           // n
+  SEG_A | SEG_D | SEG_E | SEG_F | SEG_G            // E
+};
 
 String inputText = "";
 
@@ -61,6 +85,8 @@ void setup()
   pinMode(DISPLAY_BACKLIGHT, OUTPUT);
   //enable the display backlight by default
   digitalWrite(DISPLAY_BACKLIGHT, HIGH);
+  //enable receiver on interrupt pin 0 (PIN 3 on Pro Micro; PIN 2 on Nano)
+  rcSwitch.enableReceive(PIN_DATA);
 }
 
 void loop()
@@ -113,6 +139,20 @@ void loop()
       ignoreNextDisplayTurnOff = false;
     }
   }
+
+  //timer for the five seconds text (set back to clock time afterwards)
+  if (currentTime < 10000) {
+    //expect that the programm just stared or the counter reached an overflow (after about 50 days)
+    fiveSecondsDisplayStartTime = 10000;
+  }
+  if (currentTime - fiveSecondsDisplayStartTime > 5000) {
+    //set the displayed text back to the last known time
+    
+  }
+  
+  
+  //receive remote alarm settings from the rc-switch
+  receiveRemoteAlarm();
 }
 
 void handleInput(String inputText) {
@@ -136,6 +176,49 @@ void handleInput(String inputText) {
     case 'B'://display backlight
       setDisplayBacklight(inputText);
       break;
+    case 'D'://display a text for 5 seconds
+      displayForFiveSeconds(inputText);
+      break;
+  }
+}
+
+void receiveRemoteAlarm() {
+  if (rcSwitch.available()){
+    int received = rcSwitch.getReceivedValue();
+    int bitLength = rcSwitch.getReceivedBitlength();
+    
+    //print the raw data
+    /*Serial.write("Received: ");
+    Serial.write(received);
+    Serial.write(" Bit-Length: ");
+    Serial.write(bitLength);
+    Serial.write("\n");*/
+    
+    if (bitLength == SEND_BITS) {
+      if (received == SEND_CODE_SHOW_NEXT) {
+        //Serial.write("Received SHOW_NEXT code\n");
+        Serial.println(REMOTE_ALARM_CODE_SHOW_NEXT_ALARM);
+      }
+      if (received == SEND_CODE_DELETE_ALL) {
+        //Serial.write("Received DELETE_ALL code\n");
+        Serial.println(REMOTE_ALARM_CODE_DELETE_ALL);
+      }
+      if (received >= SEND_CODE_SET_ALARM) {
+        int receivedClockCode = received - SEND_CODE_SET_ALARM;
+        char cstr[16];
+        char* timeCode = itoa(receivedClockCode, cstr, 10);
+        /*Serial.write("Received SET_ALARM code with clock code: ");
+        Serial.write(s);
+        Serial.write("\n");*/
+        Serial.write(REMOTE_ALARM_CODE_SET_ALARM);
+        Serial.println(timeCode);
+      }
+    }
+    
+    delay(250);//prevents repetitions
+    
+    //reset the receiver
+    rcSwitch.resetAvailable();
   }
 }
 
@@ -260,3 +343,23 @@ void updateDisplayBrightness() {
   display.showNumberDecEx(lastKnownClockTime, points, true);
 }
 
+void displayForFiveSeconds(String inputText) {
+  //input form:   "D HHMM"
+  //alternative:  "D NONE"
+  
+  //store the last known time because it will be set to a different time for 5 seconds
+  int prevLastKnownTime = lastKnownClockTime;
+  
+  //check whether it's the text NONE that shall be displayed or a time
+  if (inputText[2] == 'N') {
+    display.setSegments(SEG_NONE);
+    //display.showNumberDecEx(SEG_NONE, no_points, true);
+  }
+  else {
+    setClockTime(inputText);
+    //the last known time was overwritten by the setClockTime() method -> set it back
+    lastKnownClockTime = prevLastKnownTime;
+  }
+  //set the counter for the five seconds display
+  fiveSecondsDisplayStartTime = millis();
+}

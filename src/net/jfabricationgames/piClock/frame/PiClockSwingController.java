@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,9 +23,14 @@ import net.jfabricationgames.piClock.serial.PiClockSerialConnection;
 import net.jfabricationgames.piClock.temperature.TemperatureChangeListener;
 import net.jfabricationgames.piClock.temperature.TemperatureManager;
 
-public class PiClockSwingController implements TimeChangeListener, TemperatureChangeListener{
+public class PiClockSwingController implements TimeChangeListener, TemperatureChangeListener {
 	
 	private Logger LOGGER = LogManager.getLogger(PiClockSwingController.class);
+	
+	//the message codes to send to the alarm clock for remote alarms (need pattern recognition because no callback can be used)
+	private static final String REMOTE_ALARM_CODE_SET_ALARM = "REMOTE_ALARM_SET ";//+ alarm time as string
+	private static final String REMOTE_ALARM_CODE_SHOW_NEXT_ALARM = "REMOTE_ALARM_SHOW";
+	private static final String REMOTE_ALARM_CODE_DELETE_ALL = "REMOTE_ALARM_DELETE_ALL";
 	
 	private PiClockFrameSwing frame;
 	
@@ -43,7 +49,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 		LOGGER.info("Creating pi clock swing controller");
 		LOGGER.info("Initializing serial connection, clock manager, tempeature manager, audio player and alarm manager");
 		
-		serialConnection = new PiClockSerialConnection();
+		serialConnection = new PiClockSerialConnection(this);
 		clockManager = new ClockManager(serialConnection);
 		temperatureManager = new TemperatureManager(serialConnection);
 		try {
@@ -67,7 +73,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	public void timeChanged(LocalDateTime time) {
 		String timeText = time.format(timeFormat);
 		if (timeText != null) {
-			frame.setTime(timeText);			
+			frame.setTime(timeText);
 		}
 	}
 	
@@ -110,7 +116,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	public void pauseAlarm() {
 		Alarm activeAlarm = alarmManager.getActiveAlarm();
 		if (activeAlarm != null) {
-			int time = 60*5;//5 minutes
+			int time = 60 * 5;//5 minutes
 			alarmManager.pauseAlarm(activeAlarm, time);
 		}
 	}
@@ -158,7 +164,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	}*/
 	
 	/**
-	 * Enable or disable the power supply of the speaker amplifier using a relay 
+	 * Enable or disable the power supply of the speaker amplifier using a relay
 	 */
 	/*public void setSpeakerAmplifierEnabled(boolean enabled) {
 		serialConnection.setSpeakerAmplifierEnabled(enabled);
@@ -174,5 +180,76 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	
 	public RPiAudioPlayer getAudioPlayer() {
 		return audioPlayer;
+	}
+	
+	public boolean isRemoteAlarmMessage(String message) {
+		return message.startsWith(REMOTE_ALARM_CODE_SET_ALARM) || message.startsWith(REMOTE_ALARM_CODE_SHOW_NEXT_ALARM)
+				|| message.startsWith(REMOTE_ALARM_CODE_DELETE_ALL);
+	}
+	
+	public void processRemoteAlarmMessage(String message) {
+		if (message.startsWith(REMOTE_ALARM_CODE_SET_ALARM)) {
+			try {
+				String timeCode = message.substring(message.length() - 5);
+				String hourCode = timeCode.substring(0, 3);
+				String minuteCode = timeCode.substring(2);
+				int alarmHour = Integer.parseInt(hourCode);
+				int alarmMinute = Integer.parseInt(minuteCode);
+				
+				LOGGER.debug("Adding new alarm (from remote): " + alarmHour + ":" + alarmMinute);
+				addAlarm(alarmHour, alarmMinute, AlarmRepetition.NONE);
+				//show the next alarm time on the clock display
+				showNextAlarmTime();
+			}
+			catch (NumberFormatException | IndexOutOfBoundsException e) {
+				LOGGER.error("Error while decoding the new alarm", e);
+			}
+		}
+		else if (message.startsWith(REMOTE_ALARM_CODE_SHOW_NEXT_ALARM)) {
+			showNextAlarmTime();
+		}
+		else if (message.startsWith(REMOTE_ALARM_CODE_DELETE_ALL)) {
+			disableAllAlarmsOfNext24Hours();
+			//show the next alarm time on the clock display to verify there is none
+			showNextAlarmTime();
+		}
+	}
+	
+	/**
+	 * Show the next alarm time on the clock display (within the next 24 hours only).
+	 * If there is no alarm the text "NONE" is displayed.
+	 */
+	public void showNextAlarmTime() {
+		LOGGER.trace("Showing next alarm time on clock display");
+		Optional<Alarm> nextAlarm = alarmManager.getNextAlarmToPlay();
+		boolean alarmFound = false;
+		if (nextAlarm.isPresent()) {
+			Alarm alarm = nextAlarm.get();
+			//check whether the alarm is within the next 24 hours
+			if (alarm.getDateTime().isBefore(LocalDateTime.now().plusDays(1))) {
+				alarmFound = true;
+				//get the alarm time and display it on the clock display
+				int hours = alarm.getDateTime().getHour();
+				int minutes = alarm.getDateTime().getMinute();
+				serialConnection.showTimeForFiveSeconds(hours, minutes);
+			}
+		}
+		if (!alarmFound) {
+			//no alarm found -> display "None"
+			serialConnection.showTimeForFiveSeconds(-1, -1);//shows text "NONE"
+		}
+	}
+	
+	public void disableAllAlarms() {
+		for (Alarm alarm : getAlarms()) {
+			alarm.setActive(false);
+		}
+	}
+	
+	public void disableAllAlarmsOfNext24Hours() {
+		List<Alarm> next24HourAlarms = alarmManager.getActiveAlarmsForNext24Hours();
+		for (Alarm alarm : next24HourAlarms) {
+			alarm.setActive(false);
+		}
 	}
 }
