@@ -90,13 +90,29 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	}
 	
 	public void addAlarm(int hour, int minute, AlarmRepetition repetition) {
-		LOGGER.info("Creating new alarm for: {}:{} (repetition: {}", hour, minute, repetition);
+		LOGGER.info("Received order to create new alarm for: {}:{} (repetition: {})", hour, minute, repetition);
+		
 		LocalDateTime alarmDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.of(hour, minute));
 		if (alarmDateTime.isBefore(LocalDateTime.now())) {
 			alarmDateTime = alarmDateTime.plusDays(1);
 		}
 		Alarm alarm = new PiClockAlarm(alarmDateTime, alarmManager, true, repetition);
-		alarmManager.addAlarm(alarm);
+		
+		//check whether there is already an alarm at this time
+		Optional<Alarm> equalAlarm = alarmManager.getEqualAlarm(alarm);
+		
+		if (equalAlarm.isPresent()) {
+			LOGGER.info(
+					"Found alarm equal to the new alarm. Activating the equal alarm instead of adding a new one (Alarm activated: {}:{} (repetition: {}))",
+					hour, minute, repetition);
+			//activate the equal alarm instead of adding a new one
+			equalAlarm.get().setActive(true);
+		}
+		else {
+			LOGGER.info("Creating new alarm for: {}:{} (repetition: {})", hour, minute, repetition);
+			//add a new alarm
+			alarmManager.addAlarm(alarm);
+		}
 	}
 	
 	public void removeAlarm(Alarm alarm) {
@@ -190,13 +206,21 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	public void processRemoteAlarmMessage(String message) {
 		if (message.startsWith(REMOTE_ALARM_CODE_SET_ALARM)) {
 			try {
-				String timeCode = message.substring(message.length() - 5);
-				String hourCode = timeCode.substring(0, 3);
+				String timeCode = message.substring(message.length() - 4);
+				String hourCode = timeCode.substring(0, 2);
 				String minuteCode = timeCode.substring(2);
+				
+				LOGGER.debug("Received remote alarm update: timeCode: " + timeCode + " hourCode: " + hourCode + " minuteCode: " + minuteCode);
+				
+				//hour codes like 0700 are only shown as 700
+				if (hourCode.charAt(0) == ' ') {
+					hourCode = "0" + hourCode.substring(1);
+				}
+				
 				int alarmHour = Integer.parseInt(hourCode);
 				int alarmMinute = Integer.parseInt(minuteCode);
 				
-				LOGGER.debug("Adding new alarm (from remote): " + alarmHour + ":" + alarmMinute);
+				LOGGER.info("Adding new alarm (from remote): " + alarmHour + ":" + alarmMinute);
 				addAlarm(alarmHour, alarmMinute, AlarmRepetition.NONE);
 				//show the next alarm time on the clock display
 				showNextAlarmTime();
@@ -206,18 +230,21 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 			}
 		}
 		else if (message.startsWith(REMOTE_ALARM_CODE_SHOW_NEXT_ALARM)) {
+			LOGGER.info("Received remote show alarm message");
 			showNextAlarmTime();
 		}
 		else if (message.startsWith(REMOTE_ALARM_CODE_DELETE_ALL)) {
+			LOGGER.info("Received remote delete all alarms message");
 			disableAllAlarmsOfNext24Hours();
 			//show the next alarm time on the clock display to verify there is none
 			showNextAlarmTime();
 		}
+		updateAlarmList();
+		updateNextAlarmTime();
 	}
 	
 	/**
-	 * Show the next alarm time on the clock display (within the next 24 hours only).
-	 * If there is no alarm the text "NONE" is displayed.
+	 * Show the next alarm time on the clock display (within the next 24 hours only). If there is no alarm the text "NONE" is displayed.
 	 */
 	public void showNextAlarmTime() {
 		LOGGER.trace("Showing next alarm time on clock display");

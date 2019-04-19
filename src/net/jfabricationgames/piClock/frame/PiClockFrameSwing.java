@@ -606,10 +606,12 @@ public class PiClockFrameSwing extends JFrame {
 	}
 	
 	public void updateTrackList(List<File> tracks) {
-		trackListModel.clear();
-		for (File trackFile : tracks) {
-			Track track = new Track(trackFile);
-			trackListModel.addElement(track);			
+		if (trackListModel != null) {
+			trackListModel.clear();
+			for (File trackFile : tracks) {
+				Track track = new Track(trackFile);
+				trackListModel.addElement(track);			
+			}			
 		}
 	}
 	

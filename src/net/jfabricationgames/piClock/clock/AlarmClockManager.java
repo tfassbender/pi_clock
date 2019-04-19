@@ -238,6 +238,24 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 		return alarms;
 	}
 	
+	/**
+	 * Find an alarm that is equal the the searched one.<br>
+	 * 
+	 * Alarms are equal if they have...<br>
+	 * - the same alarm time<br>
+	 * - the same repetition type<br>
+	 */
+	public Optional<Alarm> getEqualAlarm(Alarm alarm) {
+		int searchedHour = alarm.getDateTime().getHour();
+		int searchedMinute = alarm.getDateTime().getMinute();
+		AlarmRepetition searchedRepetition = alarm.getRepetition();
+		
+		Optional<Alarm> equalAlarm = getAlarms().stream().filter(a -> a.getDateTime().getHour() == searchedHour
+				&& a.getDateTime().getMinute() == searchedMinute && a.getRepetition() == searchedRepetition).findFirst();
+		
+		return equalAlarm;
+	}
+	
 	@Override
 	public void timeChanged(LocalDateTime time) {
 		updateNextAlarm();
@@ -250,6 +268,6 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 		}
 		LOGGER.info("Received alarm stop from alarm switch (via serial port; message: " + message + "; cause: " + cause + ")");
 		//do not stop the alarm because the switch (hardware) is currently not working
-		//controller.stopAlarm();
+		controller.stopAlarm();
 	}
 }
