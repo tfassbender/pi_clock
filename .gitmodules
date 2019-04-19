@@ -1,0 +1,3 @@
+[submodule "pi_clock_arduino_sketches"]
+	path = pi_clock_arduino_sketches
+	url = https://github.com/tfassbender/pi_clock_arduino_sketches.git
