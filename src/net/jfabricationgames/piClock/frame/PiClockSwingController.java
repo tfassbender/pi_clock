@@ -247,7 +247,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 	 * Show the next alarm time on the clock display (within the next 24 hours only). If there is no alarm the text "NONE" is displayed.
 	 */
 	public void showNextAlarmTime() {
-		LOGGER.trace("Showing next alarm time on clock display");
+		LOGGER.debug("Showing next alarm time on clock display");
 		Optional<Alarm> nextAlarm = alarmManager.getNextAlarmToPlay();
 		boolean alarmFound = false;
 		if (nextAlarm.isPresent()) {
@@ -261,6 +261,7 @@ public class PiClockSwingController implements TimeChangeListener, TemperatureCh
 				serialConnection.showTimeForFiveSeconds(hours, minutes);
 			}
 		}
+		
 		if (!alarmFound) {
 			//no alarm found -> display "None"
 			serialConnection.showTimeForFiveSeconds(-1, -1);//shows text "NONE"

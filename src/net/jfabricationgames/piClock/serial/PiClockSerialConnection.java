@@ -110,7 +110,7 @@ public class PiClockSerialConnection implements SerialMessageListener {
 	 *        cause exceptions)
 	 */
 	public void showTimeForFiveSeconds(int hour, int minute) {
-		LOGGER.trace("Showing time for 5 seconds: hour: " + hour + " minute: " + minute);
+		LOGGER.debug("Showing time for 5 seconds: hour: " + hour + " minute: " + minute);
 		String sendText = COMMAND_SHOW_TIME_5_SECONDS;
 		if (hour == -1 || minute == -1) {
 			sendText += SHOW_NONE_TEXT;
@@ -120,10 +120,24 @@ public class PiClockSerialConnection implements SerialMessageListener {
 			throw new IllegalArgumentException("The time format " + hour + ":" + minute + " is not valid");
 		}
 		else {
-			sendText += hour;
-			sendText += minute;
+			if (hour < 10) {
+				sendText += "0" + hour;
+			}
+			else {
+				sendText += hour;				
+			}
+			
+			if (minute < 10) {
+				sendText += "0" + minute;
+			}
+			else {
+				sendText += minute;				
+			}
 		}
+		sendText += COMMAND_END_SIGN;
+		
 		LOGGER.trace("Sending text via serial connection (serial message: {})", sendText);
+		serialConnection.sendMessage(sendText);
 	}
 	
 	public void getTemperature(SerialMessageReceiver callback, int cause) {
