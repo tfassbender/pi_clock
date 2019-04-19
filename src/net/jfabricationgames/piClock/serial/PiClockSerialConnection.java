@@ -6,6 +6,8 @@ import java.util.Queue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import net.jfabricationgames.piClock.frame.PiClockSwingController;
+
 public class PiClockSerialConnection implements SerialMessageListener {
 	
 	private Logger LOGGER = LogManager.getLogger(PiClockSerialConnection.class);
@@ -16,6 +18,9 @@ public class PiClockSerialConnection implements SerialMessageListener {
 	private static final String COMMAND_SET_ALARM_SWITCH = "A ";
 	private static final String COMMAND_SET_SPEAKER_AMPLIFIER = "S ";
 	private static final String COMMAND_SET_DISPLAY_BACKLIGHT = "B ";
+	private static final String COMMAND_SHOW_TIME_5_SECONDS = "D ";
+	
+	private static final String SHOW_NONE_TEXT = "NONE";
 	
 	private static final String COMMAND_END_SIGN = ";";
 	
@@ -28,7 +33,10 @@ public class PiClockSerialConnection implements SerialMessageListener {
 	private Queue<CallbackRequest> callbackRequests;
 	private CallbackRequest alarmSwitchCallbackRequest;
 	
-	public PiClockSerialConnection() {
+	private PiClockSwingController swingController;
+	
+	public PiClockSerialConnection(PiClockSwingController swingController) {
+		this.swingController = swingController;
 		serialConnection = new SerialConnection();
 		if (!serialConnection.initialize()) {
 			IllegalStateException ise = new IllegalStateException("Couldn't initialize the SerialConnection for unknown reasons.");
@@ -43,16 +51,22 @@ public class PiClockSerialConnection implements SerialMessageListener {
 	public void receiveSerialMessage(String message) {
 		LOGGER.trace("Received serial message: {}", message);
 		lastReceivedMessage = message;
-		CallbackRequest callback = callbackRequests.poll();
-		if (callback != null) {
-			callback.getCallback().receiveMessage(message, callback.getCause());
-		}
-		else if (alarmSwitchCallbackRequest != null) {
-			alarmSwitchCallbackRequest.getCallback().receiveMessage(message, alarmSwitchCallbackRequest.getCause());
+		//first check whether the message is from a remote alarm controller because these don't use callbacks
+		if (swingController != null && swingController.isRemoteAlarmMessage(message)) {
+			swingController.processRemoteAlarmMessage(message);
 		}
 		else {
-			LOGGER.warn("Received a serial message but have no callback request in the queue");
-			System.err.println("Received a serial message but have no callback requests in the queue...");
+			CallbackRequest callback = callbackRequests.poll();
+			if (callback != null) {
+				callback.getCallback().receiveMessage(message, callback.getCause());
+			}
+			else if (alarmSwitchCallbackRequest != null) {
+				alarmSwitchCallbackRequest.getCallback().receiveMessage(message, alarmSwitchCallbackRequest.getCause());
+			}
+			else {
+				LOGGER.warn("Received a serial message but have no callback request in the queue");
+				System.err.println("Received a serial message but have no callback requests in the queue...");
+			}
 		}
 	}
 	
@@ -82,6 +96,34 @@ public class PiClockSerialConnection implements SerialMessageListener {
 		//send the new time to via the serial port
 		LOGGER.trace("Sending time via serial connection (serial message: {})", clockText);
 		serialConnection.sendMessage(clockText);
+	}
+	
+	/**
+	 * Shows a given time on the clock display for 5 seconds. Used for the remote alarm controller to display successful submission.
+	 * 
+	 * @param hour
+	 *        The hour that is displayed (from 0 to 23). If the parameter is set to -1 the text "NONE" will be displayed. (all other invalid inputs
+	 *        cause exceptions)
+	 * 
+	 * @param minute
+	 *        The minute that is displayed (from 0 to 59). if the parameter is set to -1 the text "NONE" will be displayed. (all other invalid inputs
+	 *        cause exceptions)
+	 */
+	public void showTimeForFiveSeconds(int hour, int minute) {
+		LOGGER.trace("Showing time for 5 seconds: hour: " + hour + " minute: " + minute);
+		String sendText = COMMAND_SHOW_TIME_5_SECONDS;
+		if (hour == -1 || minute == -1) {
+			sendText += SHOW_NONE_TEXT;
+		}
+		else if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+			LOGGER.error("Invalid time format found to be displayed: hour: " + hour + " minute: " + minute);
+			throw new IllegalArgumentException("The time format " + hour + ":" + minute + " is not valid");
+		}
+		else {
+			sendText += hour;
+			sendText += minute;
+		}
+		LOGGER.trace("Sending text via serial connection (serial message: {})", sendText);
 	}
 	
 	public void getTemperature(SerialMessageReceiver callback, int cause) {

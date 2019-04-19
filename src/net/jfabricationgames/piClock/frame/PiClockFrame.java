@@ -25,7 +25,7 @@ public class PiClockFrame extends Application {
 	
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		PiClockSerialConnection serialConnection = new PiClockSerialConnection();
+		PiClockSerialConnection serialConnection = new PiClockSerialConnection(null);
 		ClockManager clockManager = new ClockManager(serialConnection);
 		TemperatureManager temperatureManager = new TemperatureManager(serialConnection);
 		PiClockController controller = new PiClockController();

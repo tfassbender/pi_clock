@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -186,7 +188,7 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 				if (alarm.isActive() && alarm.getDateTime().isBefore(LocalDateTime.now())) {
 					alarm.setActive(false);
 				}
-				PiClockAlarm piClockAlarm = new PiClockAlarm(alarm.getDateTime(), this, alarm.isActive(), alarm.getRepetition()); 
+				PiClockAlarm piClockAlarm = new PiClockAlarm(alarm.getDateTime(), this, alarm.isActive(), alarm.getRepetition());
 				alarms.add(piClockAlarm);
 				clockManager.addTimeChangeListener(piClockAlarm);
 			}
@@ -216,10 +218,44 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 		return activeAlarm;
 	}
 	
+	/**
+	 * Finds the next alarm that is activated (if any).
+	 * 
+	 * @return An Optional is returned that holds the next alarm (if any).
+	 */
+	public Optional<Alarm> getNextAlarmToPlay() {
+		Optional<Alarm> nextAlarm = alarms.stream().filter(a -> a.isActive()).sorted().findFirst();
+		return nextAlarm;
+	}
+	
+	public List<Alarm> getActiveAlarmsForNext24Hours() {
+		List<Alarm> activeAlarmsNext24Hours = alarms.stream().filter(a -> a.isActive() && a.getDateTime().isBefore(LocalDateTime.now().plusDays(1)))
+				.collect(Collectors.toList());
+		return activeAlarmsNext24Hours;
+	}
+	
 	public List<Alarm> getAlarms() {
 		return alarms;
 	}
-
+	
+	/**
+	 * Find an alarm that is equal the the searched one.<br>
+	 * 
+	 * Alarms are equal if they have...<br>
+	 * - the same alarm time<br>
+	 * - the same repetition type<br>
+	 */
+	public Optional<Alarm> getEqualAlarm(Alarm alarm) {
+		int searchedHour = alarm.getDateTime().getHour();
+		int searchedMinute = alarm.getDateTime().getMinute();
+		AlarmRepetition searchedRepetition = alarm.getRepetition();
+		
+		Optional<Alarm> equalAlarm = getAlarms().stream().filter(a -> a.getDateTime().getHour() == searchedHour
+				&& a.getDateTime().getMinute() == searchedMinute && a.getRepetition() == searchedRepetition).findFirst();
+		
+		return equalAlarm;
+	}
+	
 	@Override
 	public void timeChanged(LocalDateTime time) {
 		updateNextAlarm();
@@ -232,6 +268,6 @@ public class AlarmClockManager implements TimeChangeListener, SerialMessageRecei
 		}
 		LOGGER.info("Received alarm stop from alarm switch (via serial port; message: " + message + "; cause: " + cause + ")");
 		//do not stop the alarm because the switch (hardware) is currently not working
-		//controller.stopAlarm();
+		controller.stopAlarm();
 	}
 }
