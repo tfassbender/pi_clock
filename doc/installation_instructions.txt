@@ -36,6 +36,12 @@
 		
 7. programm starten (funktioniert noch nicht aber legt properties dateien an)
 
+	falls die mainfest datei nicht funktioniert müssen einige dateien aus dem META-INF pfad entfernt werden: 
+	(siehe: https://stackoverflow.com/questions/999489/invalid-signature-file-when-attempting-to-run-a-jar)
+		META-INF/*.SF
+		META-INF/*.DSA
+		META-INF/*.RSA
+
 8. properties files anpassen
 	
 	cd ~/Desktop/.pi_clock_properties/
